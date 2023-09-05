@@ -1,0 +1,2 @@
+# DeepTactics
+Cogito NTNU
