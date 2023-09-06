@@ -1,0 +1,4 @@
+wandb
+torch
+gymnasium[classic-control]
+numpy
