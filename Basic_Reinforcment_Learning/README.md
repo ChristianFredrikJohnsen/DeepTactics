@@ -16,3 +16,4 @@ Q-Learning is a model-free reinforcement learning algorithm that seeks to find t
 ## 📚 Further Reading
 
 - [Reinforcement Learning: An Introduction by Sutton and Barto](http://incompleteideas.net/book/RLbook2020.pdf) [Page 131]
+- [Gymnasium Reinforcement Learning Environments](https://gymnasium.farama.org/environments/classic_control/)
