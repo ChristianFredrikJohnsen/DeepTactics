@@ -15,14 +15,15 @@ class QLearningAgent(Agent):
         ob_dim = 4
 
         # Hyperparameters
-        lr = 0.3
+        lr = 0.5
         epsilon = 0.1
         gamma = 0.99
+        lamb = 0.7
 
         # Training runs
         wandb_name = env
-        episodes = 20_000
-        eval_frequency = 1000
+        episodes = 100_000
+        eval_frequency = 1_000
 
 
 
@@ -34,6 +35,8 @@ class QLearningAgent(Agent):
 
         self.epsilon = cfg.epsilon
         self.epsilon_decay = epsilon_decay
+        self.lamb = cfg.lamb
+        self.gamma = cfg.gamma
 
         self.q_values = defaultdict(lambda: [0] * self.cfg.ac_dim)
         self.num_updates = 0
@@ -64,8 +67,12 @@ class QLearningAgent(Agent):
         self.q_values = defaultdict(lambda: [0] * self.cfg.ac_dim)
         self.q_values.update(values)
 
-    def update_q_values(self, state, reward, action, next_state):
-        self.q_values[state][action] += self.cfg.lr * (reward + self.cfg.gamma * np.max(self.q_values[next_state])- self.q_values[state][action])
+    def update_q_values(self, state, reward, action, next_state, E, done):
+        reward = -10 if done else reward
+        td_target = reward + self.cfg.gamma * np.max(self.q_values[next_state]) * (1-done)
+        
+        for sa in E:
+            self.q_values[sa[0]][sa[1]] += self.cfg.lr * (td_target - self.q_values[state][action]) * E[sa]
 
         self.num_updates += 1
 
