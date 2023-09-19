@@ -30,14 +30,16 @@ class Easy_Agent():
     def greedy_action(self, state):
         return np.argmax(self.q_values[state])
     
-    def update_q_values(self, state, reward, action, next_state):
-        self.q_values[state][action] += self.lr * (reward + self.gamma * np.max(self.q_values[next_state]) - self.q_values[state][action])
+    def update_q_values(self, state, reward, action, next_state, done):
+        self.q_values[state][action] += self.lr * (reward + self.gamma * np.max(self.q_values[next_state])- self.q_values[state][action])
+        #self.q_values[state][action] += self.lr * (reward + self.gamma * np.max(self.q_values[next_state]) * (1-done) - self.q_values[state][action])
+        self.num_updates += 1
 
     def decay_lr(self):
-        self.lr -= (0.5-0.01)/self.cfg.episodes
+        self.lr -= (0.5-0.01)/self.episodes
 
     def decay_epsilon(self):
-        self.epsilon -= (0.25 - 0.05)/self.cfg.episodes
+        self.epsilon -= (0.25 - 0.05)/self.episodes
     
     def discretize(self, state):
         return tuple(np.round(state, 1))
@@ -57,16 +59,21 @@ class Easy_Agent():
 
                 action = self.act(self.discretize(state))
                 next_state, reward, terminated, truncated, _ = train_env.step(action)
-                self.update_q_values(self.discretize(state), reward, action, self.discretize(next_state))
 
-                
+                done = terminated or truncated
+                self.update_q_values(self.discretize(state), reward, action, self.discretize(next_state), done)
+
+                state = next_state
                 total_reward += reward
 
                 if terminated or truncated:
                     break
             
+            self.decay_epsilon()
+            self.decay_lr()
             print(self.q_values)
-        
+            print(self.num_updates)
+
             if episode % self.eval_frequency == 0:
 
                 obs, info = eval_env.reset()
