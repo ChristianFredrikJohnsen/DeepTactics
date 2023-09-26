@@ -2,8 +2,8 @@ import numpy.random
 import torch
 import torch.nn as nn
 
-from Agent import Agent
-from Config import Config as confg
+from Config.Agent import Agent
+from Config.Config import Config as confg
 from QNetwork import QNetwork
 from Buffer import BasicBuffer
 import numpy as np

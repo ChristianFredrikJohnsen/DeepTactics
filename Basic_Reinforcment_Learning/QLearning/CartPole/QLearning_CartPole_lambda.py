@@ -1,9 +1,9 @@
 from collections import defaultdict
 import pickle
-from Config import Config as Confg
+from Config.Config import Config as Confg
 import numpy as np
 import wandb
-from Agent import Agent
+from Config.Agent import Agent
 
 class QLearningAgent(Agent):
 

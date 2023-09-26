@@ -1,32 +1,33 @@
 from collections import defaultdict
 import pickle
-from Config import Config as Confg
+from Config.Agent import Agent
+from Config.Config import Config as Confg
 import numpy as np
-import wandb
-from Agent import Agent
+
 
 class QLearningAgent(Agent):
 
     class Config(Confg):
 
         # Env variables
-        env = "CartPole-v1"
-        ac_dim = 2
-        ob_dim = 4
+        env = "Acrobot-v1"
+        ac_dim = 3
+        ob_dim = 6
 
         # Hyperparameters
-        lr = 0.3
+        lr = 0.8
         epsilon = 0.1
         gamma = 0.99
 
         # Training runs
         wandb_name = env
-        episodes = 20_000
-        eval_frequency = 1000
+        episodes = 10000
+        eval_frequency = 500
 
 
 
-    def __init__(self, cfg, lr_decay = lambda lr, i: lr, epsilon_decay=lambda epsilon, i: epsilon):
+    def __init__(self, cfg = None, lr_decay = lambda lr, i: lr, epsilon_decay=lambda epsilon, i: epsilon):
+        cfg = self.Config() if cfg is None else cfg
         super().__init__(cfg)
 
         self.lr = cfg.lr
@@ -75,11 +76,5 @@ class QLearningAgent(Agent):
     def decay_epsilon(self, i):
         self.epsilon = self.epsilon_decay(self.epsilon, i)
 
-
-
 if __name__ == '__main__':
-    agent = QLearningAgent(QLearningAgent.Config())
-
-    agent.q_values[(0, 0, 0, 0)] = [3, -4]
-    print(agent.q_values[0, 0, 0, 0])
-
+    agent = QLearningAgent()
