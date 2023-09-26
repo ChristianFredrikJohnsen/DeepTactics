@@ -31,8 +31,7 @@ class Easy_Agent():
         return np.argmax(self.q_values[state])
     
     def update_q_values(self, state, reward, action, next_state, done):
-        self.q_values[state][action] += self.lr * (reward + self.gamma * np.max(self.q_values[next_state])- self.q_values[state][action])
-        #self.q_values[state][action] += self.lr * (reward + self.gamma * np.max(self.q_values[next_state]) * (1-done) - self.q_values[state][action])
+        self.q_values[state][action] += self.lr * (reward + self.gamma * np.max(self.q_values[next_state]) * (1-done) - self.q_values[state][action])
         self.num_updates += 1
 
     def decay_lr(self):
@@ -71,21 +70,19 @@ class Easy_Agent():
             
             self.decay_epsilon()
             self.decay_lr()
-            print(self.q_values)
-            print(self.num_updates)
+            
 
             if episode % self.eval_frequency == 0:
 
-                obs, info = eval_env.reset()
+                obs, _ = train_env.reset()
                 episode_return = 0
                 episode_length = 0
                 
 
 
-                ## Her må det være eval_env og ikke train_env, må se på dette.
                 while True:
                     action = self.greedy_action(self.discretize(obs))
-                    next_obs, reward, terminated, truncated, info = eval_env.step(action)
+                    next_obs, reward, terminated, truncated, _ = train_env.step(action)
 
                     obs = next_obs
                     episode_return += reward
@@ -95,12 +92,11 @@ class Easy_Agent():
                         break 
                 print(episode_return)
 
+                print(f'Number of updates: {self.num_updates}')
+                print(f'Episode: {episode}, Total reward: {total_reward}')
+            
 
-james = Easy_Agent(ac_dim = 2, ob_dim = 4, lr = 0.5, epsilon = 0.25, gamma = 0.99, env = "CartPole-v1", episodes = 1, eval_frequency = 10)
+james = Easy_Agent(ac_dim = 2, ob_dim = 4, lr = 0.5, epsilon = 0.25, gamma = 0.99, env = "CartPole-v1", episodes = 10_000, eval_frequency = 1_000)
 james.train_agent()
-
-
-
-
-
+print(james.q_values[(0, 0, 0, 0)])
 

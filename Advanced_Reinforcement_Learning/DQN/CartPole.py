@@ -1,5 +1,4 @@
 import wandb
-
 from DQNAgent import DQNAgent
 import torch
 import gymnasium as gym

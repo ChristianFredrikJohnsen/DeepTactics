@@ -1,4 +1,4 @@
-from QLearning_Acrobot import QLearningAgent
+from Basic_Reinforcment_Learning.QLearning.Acrobot.QLearning_Acrobot import QLearningAgent
 import wandb
 import gymnasium as gym
 import numpy as np
