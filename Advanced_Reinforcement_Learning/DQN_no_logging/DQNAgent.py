@@ -36,9 +36,9 @@ class DQNAgent(Agent):
         self.epsilon = cfg.epsilon
         self.gamma = cfg.gamma
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.q_values = QNetwork(self.cfg.ob_dim, self.cfg.ac_dim, self.cfg.hidden_dim).to(device)
-        self.target_network = QNetwork(cfg.ob_dim, cfg.ac_dim, cfg.hidden_dim).to(device)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.q_values = QNetwork(self.cfg.ob_dim, self.cfg.ac_dim, self.cfg.hidden_dim).to(self.device)
+        self.target_network = QNetwork(cfg.ob_dim, cfg.ac_dim, cfg.hidden_dim).to(self.device)
         self.update_target_network()
 
         # A mysterious -1 in ac dim appears, need to figure out what that is about.
@@ -51,7 +51,7 @@ class DQNAgent(Agent):
         return numpy.random.randint(self.cfg.ac_dim)
 
     def greedy_action(self, state):
-        return torch.argmax(self.q_values(torch.tensor(state))).item()
+        return torch.argmax(self.q_values(torch.tensor(state).to(self.device))).item()
 
     def act(self, state):
         return self.exploration_action() if np.random.rand() < self.epsilon else self.greedy_action(state)

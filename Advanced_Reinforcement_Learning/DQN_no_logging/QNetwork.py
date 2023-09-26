@@ -9,16 +9,10 @@ class QNetwork(nn.Module):
         self.linear1 = nn.Linear(ob_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, hidden_dim)
         self.linear3 = nn.Linear(hidden_dim, action_space)
-
         self.activation = nn.ReLU()
 
-    def forward(self, x):
-        
-        x = self.linear1(x)
-        x = self.activation(x)
-        x = self.activation(self.linear2(x))
-        x = self.linear3(x)
-        return x
+    def forward(self, x):        
+        return self.linear3(self.activation(self.linear2(self.activation(self.linear1(x)))))
 
 def num_params(module):
     return sum(param.numel() for param in module.parameters())
