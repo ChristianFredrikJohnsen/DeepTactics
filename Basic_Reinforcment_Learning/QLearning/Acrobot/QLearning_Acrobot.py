@@ -56,7 +56,6 @@ class QLearningAgent(Agent):
         with open(path, 'wb') as f:
             pickle.dump(values, f)
         
-        # np.save(path, np.array(self.q_values))
     
     def load(self, path):
 
