@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch
 
-
 class QNetwork(nn.Module):
 
     def __init__(self, ob_dim, action_space, hidden_dim=25):
@@ -20,13 +19,9 @@ class QNetwork(nn.Module):
         x = self.activation(self.linear2(x))
         x = self.linear3(x)
         return x
-    
-    
-
 
 def num_params(module):
     return sum(param.numel() for param in module.parameters())
-
 
 if __name__ == '__main__':
     network = QNetwork(4, 2)
