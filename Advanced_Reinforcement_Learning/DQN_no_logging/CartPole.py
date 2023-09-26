@@ -62,6 +62,6 @@ if __name__ == '__main__':
     
     # All of the observations which the agent has made.
     # print(agent.buffer['ac'])
-    print(agent.buffer.shapes)
+    # print(agent.buffer.shapes)
     print(agent.buffer)
-    print(agent.buffer['ob'])
+    # print(agent.buffer['ob'])

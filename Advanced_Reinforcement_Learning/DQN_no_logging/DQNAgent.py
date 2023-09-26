@@ -21,11 +21,11 @@ class DQNAgent(Agent):
         lr = 0.001
         epsilon = 0.05
         gamma = 0.99
-        batch_size = 100
+        batch_size = 2
 
-        min_buffer_size = 200
+        min_buffer_size = 10
         buffer_capacity = 1_000
-        episodes = 1
+        episodes = 3
         eval_freq = 500
         update_target_network_freq = 100
 
@@ -75,28 +75,23 @@ class DQNAgent(Agent):
         
         else:
             ob, ac, rew, next_ob, done = self.buffer.sample(batch_size = self.cfg.batch_size, device = self.device)
-            
-            ## All of the computation below is done on the GPU.
-            ## The values needed in the computation must therefore be moved to the GPU.
-            ob = ob.clone().detach().to(self.device)
-            next_ob = next_ob.clone().detach().to(self.device)
-            
-            ac = ac.type(torch.long).to(self.device)
-            done = done.to(self.device)
-            rew = rew.to(self.device)
-            done = done.to(self.device)
-            ## Done with sending values to the GPU.
+            ac = ac.long()
 
+            # Not sure exactly how the syntax works, but the idea is that you get the max value of the next state.
             target_max, _ = self.target_network(next_ob).max(dim=1)
             td_target = rew + self.cfg.gamma * target_max * (1 - done)
-            
+        
             old_values = self.q_values(ob).gather(1, ac.view(-1, 1)).squeeze()
 
             loss = self.loss(td_target, old_values)
             
+            # Backpropagation
             self.optimizer.zero_grad()
             loss.backward()
+
+            # Gradient clipping
             self.optimizer.step()
+            
             return loss
 
 if __name__ == '__main__':

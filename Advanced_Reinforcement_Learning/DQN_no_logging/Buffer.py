@@ -171,22 +171,38 @@ class BasicBuffer:
         else:
             raise ValueError('Buffer capacity exceeded with wrap=False')
 
-    def get(self, indices=None, as_dict=False, to_torch=True, device=None):
+    def get(self, indices=None, as_dict=False, to_torch=True, device='cpu'):
+        """
+        Indices: The indices of the samples we want to get from the buffer.
+        as_dict: Whether we want the data as a dictionary or a tuple.
+        to_torch: Whether we want to convert the data to torch tensors.
+        device: The device we want to store the data on, either cpu or gpu.
+        """
+
+        # If indices is None, we want to get all the samples in the buffer.
         indices = slice(0, len(self)) if indices is None else indices
+
+        # Extracting data from the buffer, based on the indices.
+        # You will get something like this:
+        # {'ob': [[1, 1, 1, 1], [2, 2, 2, 2]], 'ac': [1, 2], 'rew': [1, 1], 'next_ob': [[2, 2, 2, 2], [3, 3, 3, 3]], 'done': [0, 0]}
         data = {k: v[indices] for k, v in self.data.items()}
+        print(f'From buffer: {data}')
+        # If we are converting to torch tensors, we do that here.
         if to_torch:
-            data = {
-                k: torch.from_numpy(v).to(device) for k, v in data.items()
-            }
-        if as_dict:
-            return data
-        else:
-            return tuple(data[k] for k in self.keys)
+            data = {k: torch.from_numpy(v).to(device) for k, v in data.items()}        
+        
+        # If we want the data as a dictionary, we simply return the data dict.
+        # If we want the data as a tuple, we return a tuple of the data values.
+        # An example of the latter would be:
+        # (array([[1, 1, 1, 1], [2, 2, 2, 2]]), array([1, 2]), array([1, 1]), array([[2, 2, 2, 2], [3, 3, 3, 3]]), array([0, 0]))
+        return data if as_dict else tuple(data[k] for k in self.keys)
 
     def sample(self, batch_size=1, replace=True, **kwargs):
         indices = np.random.choice(self.size, size=batch_size, replace=replace)
         return self.get(indices=indices, **kwargs)
 
+
+    # Have not looked into these two methods yet.
     def sample_recent(self, n, batch_size=1, replace=True, **kwargs):
         indices = np.random.choice(self.size - n, size=batch_size, replace=replace)
         return self.get(indices=n + indices, **kwargs)
