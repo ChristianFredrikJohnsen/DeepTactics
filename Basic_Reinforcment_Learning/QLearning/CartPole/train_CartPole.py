@@ -11,7 +11,7 @@ def train_agent(agent):
     train_env = gym.make(agent.cfg.env)
     eval_env = gym.make(agent.cfg.env, render_mode="human")
 
-    wandb.init(project = agent.cfg.wandb_name, config = agent.cfg.get_members())
+    wandb.init(project = agent.cfg.wandb_name, config = agent.cfg.dict)
 
     for episode in range(1, agent.cfg.episodes + 1):
 

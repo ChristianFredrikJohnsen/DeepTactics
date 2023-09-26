@@ -22,11 +22,12 @@ class QLearningAgent(Agent):
         # Training runs
         wandb_name = env
         episodes = 10000
-        eval_frequency = 50
+        eval_frequency = 500
 
 
 
-    def __init__(self, cfg, lr_decay = lambda lr, i: lr, epsilon_decay=lambda epsilon, i: epsilon):
+    def __init__(self, cfg = None, lr_decay = lambda lr, i: lr, epsilon_decay=lambda epsilon, i: epsilon):
+        cfg = self.Config() if cfg is None else cfg
         super().__init__(cfg)
 
         self.lr = cfg.lr
@@ -75,8 +76,5 @@ class QLearningAgent(Agent):
     def decay_epsilon(self, i):
         self.epsilon = self.epsilon_decay(self.epsilon, i)
 
-
-
 if __name__ == '__main__':
-    agent = QLearningAgent(QLearningAgent.Config())
-    print(agent.q_values)
+    agent = QLearningAgent()
