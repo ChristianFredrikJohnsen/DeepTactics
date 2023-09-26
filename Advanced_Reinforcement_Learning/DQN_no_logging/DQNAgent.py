@@ -15,21 +15,20 @@ class DQNAgent(Agent):
 
         wandb_name = "DQN-CartPole"
         env = "CartPole-v1"
-        ac_dim = 1
         ob_dim = 4
-        action_space = 2
+        ac_dim = 2
         hidden_dim = 25
 
-        lr = 0.01
+        lr = 0.001
         epsilon = 0.05
         gamma = 0.99
-        batch_size = 2
+        batch_size = 100
 
-        min_buffer_size = 100
+        min_buffer_size = 200
         buffer_capacity = 10000
-        episodes = 5000
+        episodes = 2000
         eval_freq = 500
-        update_target_network_freq = 35
+        update_target_network_freq = 100
 
         # Reduce overestimation https://arxiv.org/pdf/1509.06461.pdf
         double_dqn = True
@@ -42,30 +41,30 @@ class DQNAgent(Agent):
         self.gamma = cfg.gamma
 
         # Initialize networks
-        self.q_values = QNetwork(cfg.ob_dim, cfg.action_space, cfg.hidden_dim)
-        self.target_network = QNetwork(cfg.ob_dim, cfg.action_space, cfg.hidden_dim)
+        self.q_values = QNetwork(cfg.ob_dim, cfg.ac_dim, cfg.hidden_dim)
+        self.target_network = QNetwork(cfg.ob_dim, cfg.ac_dim, cfg.hidden_dim)
         self.update_target_network()
 
         # Init replay buffer
-        self.buffer = BasicBuffer.make_default(cfg.buffer_capacity, cfg.ob_dim, cfg.ac_dim, wrap=True)
+        # A mysterious -1 in ac dim appears, need to figure out what that is about.
+        self.buffer = BasicBuffer.make_default(cfg.buffer_capacity, cfg.ob_dim, cfg.ac_dim - 1, wrap=True)
 
         # Init optimizer stuff
         self.optimizer = torch.optim.Adam(self.q_values.parameters(), cfg.lr)
         self.loss = nn.MSELoss()
 
-    def _exploration_action(self):
-        return numpy.random.randint(self.cfg.action_space)
+    def exploration_action(self):
+        return numpy.random.randint(self.cfg.ac_dim)
 
-    def _greedy_action(self, state):
+    def greedy_action(self, state):
         # Make the state a tensor so the network will accept it
-        state = torch.tensor(state)
-        return torch.argmax(self.q_values(state)).item()
+        return torch.argmax(self.q_values(torch.tensor(state))).item()
 
     def act(self, state):
         if np.random.rand() < self.cfg.epsilon:
-            return self._exploration_action()
+            return self.exploration_action()
         else:
-            return self._greedy_action(state)
+            return self.greedy_action(state)
 
     def save(self, path):
         torch.save(self.q_values.state_dict(), path)
@@ -132,20 +131,21 @@ class DQNAgent(Agent):
 if __name__ == '__main__':
     
     agent = DQNAgent(DQNAgent.Config())
+    print('done')
 
-    import gymnasium as gym
+    # import gymnasium as gym
 
-    env = gym.make("CartPole-v1")
+    # env = gym.make("CartPole-v1")
 
-    obs, info = env.reset()
+    # obs, info = env.reset()
 
-    for i in range(1000):
-        action = env.action_space.sample()
-        next_obs, reward, terminated, truncated, info = env.step(action)
-        reward = 1
+    # for i in range(1000):
+    #     action = env.ac_dim.sample()
+    #     next_obs, reward, terminated, truncated, info = env.step(action)
+    #     reward = 1
 
-        agent.store_transition(obs, action, reward, next_obs, terminated)
+    #     agent.store_transition(obs, action, reward, next_obs, terminated)
 
-        obs = next_obs
+    #     obs = next_obs
 
-    agent.update_q_values()
+    # agent.update_q_values()
