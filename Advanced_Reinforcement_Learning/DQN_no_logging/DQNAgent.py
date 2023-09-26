@@ -25,7 +25,7 @@ class DQNAgent(Agent):
 
         min_buffer_size = 200
         buffer_capacity = 1_000
-        episodes = 2000
+        episodes = 1
         eval_freq = 500
         update_target_network_freq = 100
 
@@ -63,12 +63,7 @@ class DQNAgent(Agent):
         self.q_values = torch.load(path); self.update_target_network()
 
     def store_transition(self, ob, ac, rew, next_ob, done):
-        self.buffer << {'ob': [ob],
-                        'ac': [ac],
-                        'rew': [rew],
-                        'next_ob': [next_ob],
-                        'done': [done]
-                        }
+        self.buffer << {'ob': [ob], 'ac': [ac], 'rew': [rew], 'next_ob': [next_ob], 'done': [done]}
 
     def update_target_network(self):
         self.target_network.load_state_dict(self.q_values.state_dict())
@@ -79,7 +74,7 @@ class DQNAgent(Agent):
             return None
         
         else:
-            ob, ac, rew, next_ob, done = self.buffer.sample(self.cfg.batch_size)
+            ob, ac, rew, next_ob, done = self.buffer.sample(batch_size = self.cfg.batch_size, device = self.device)
             
             ## All of the computation below is done on the GPU.
             ## The values needed in the computation must therefore be moved to the GPU.
@@ -106,4 +101,6 @@ class DQNAgent(Agent):
 
 if __name__ == '__main__':
     agent = DQNAgent(DQNAgent.Config())
-    print("CUDA is available") if torch.cuda.is_available() else print("CUDA is not available")
+    print(len(agent.buffer))
+    print(agent.buffer.data)
+    # print("CUDA is available") if torch.cuda.is_available() else print("CUDA is not available")

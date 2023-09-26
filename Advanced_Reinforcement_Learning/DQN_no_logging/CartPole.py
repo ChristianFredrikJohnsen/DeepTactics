@@ -51,7 +51,7 @@ def train_agent(agent):
                 if terminated or truncated:
                     break
 
-            print("Eval return:", episode_return, end="")
+            print("Eval return:", episode_return, "\n")
 
 if __name__ == '__main__':
 
@@ -59,3 +59,9 @@ if __name__ == '__main__':
     train_agent(agent)
 
     agent.save("Advanced_Reinforcement_Learning/DQN_no_logging/testdqn.pyt")
+    
+    # All of the observations which the agent has made.
+    # print(agent.buffer['ac'])
+    print(agent.buffer.shapes)
+    print(agent.buffer)
+    print(agent.buffer['ob'])
