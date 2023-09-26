@@ -1,28 +1,28 @@
 from collections import defaultdict
 import pickle
-from Agent import Agent
-from Config import Config as Confg
+from Config.Config import Config as Confg
 import numpy as np
-
+import wandb
+from Config.Agent import Agent
 
 class QLearningAgent(Agent):
 
     class Config(Confg):
 
         # Env variables
-        env = "Acrobot-v1"
-        ac_dim = 3
-        ob_dim = 6
+        env = "CartPole-v1"
+        ac_dim = 2
+        ob_dim = 4
 
         # Hyperparameters
-        lr = 0.8
+        lr = 0.3
         epsilon = 0.1
         gamma = 0.99
 
         # Training runs
         wandb_name = env
-        episodes = 10000
-        eval_frequency = 50
+        episodes = 20_000
+        eval_frequency = 1000
 
 
 
@@ -79,3 +79,7 @@ class QLearningAgent(Agent):
 
 if __name__ == '__main__':
     agent = QLearningAgent(QLearningAgent.Config())
+
+    agent.q_values[(0, 0, 0, 0)] = [3, -4]
+    print(agent.q_values[0, 0, 0, 0])
+
