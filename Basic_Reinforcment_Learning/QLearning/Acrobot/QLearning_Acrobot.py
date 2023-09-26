@@ -79,3 +79,4 @@ class QLearningAgent(Agent):
 
 if __name__ == '__main__':
     agent = QLearningAgent(QLearningAgent.Config())
+    print(agent.q_values)
