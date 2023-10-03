@@ -16,18 +16,18 @@ class DQNAgent(Agent):
         env = "CartPole-v1"
         ob_dim = 4
         ac_dim = 2
-        hidden_dim = 25
+        hidden_dim = 2_000
 
         lr = 0.001
         epsilon = 0.05
         gamma = 0.99
-        batch_size = 2
+        batch_size = 100
 
-        min_buffer_size = 10
-        buffer_capacity = 1_000
-        episodes = 3
-        eval_freq = 500
-        update_target_network_freq = 100
+        min_buffer_size = 2_000
+        buffer_capacity = 20_000
+        episodes = 5_000
+        eval_freq = 100
+        update_target_network_freq = 200
 
     def __init__(self, cfg):
         super().__init__(cfg)
@@ -74,6 +74,7 @@ class DQNAgent(Agent):
             return None
         
         else:
+
             ob, ac, rew, next_ob, done = self.buffer.sample(batch_size = self.cfg.batch_size, device = self.device)
             ac = ac.long()
 

@@ -186,7 +186,6 @@ class BasicBuffer:
         # You will get something like this:
         # {'ob': [[1, 1, 1, 1], [2, 2, 2, 2]], 'ac': [1, 2], 'rew': [1, 1], 'next_ob': [[2, 2, 2, 2], [3, 3, 3, 3]], 'done': [0, 0]}
         data = {k: v[indices] for k, v in self.data.items()}
-        print(f'From buffer: {data}')
         # If we are converting to torch tensors, we do that here.
         if to_torch:
             data = {k: torch.from_numpy(v).to(device) for k, v in data.items()}        
