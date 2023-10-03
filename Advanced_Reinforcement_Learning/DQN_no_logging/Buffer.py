@@ -216,15 +216,17 @@ class BasicBuffer:
         """
         Creates a buffer with default fields for observations, action, reward and done.
         Keywordargument is used in our case to set wrap=True.
+        We set dtype to np.int64 for the action field, since we want to store the action as an integer,
+        and torch.gather requires the indices to be of type np.int64.
         """
         return cls(
             capacity = capacity,
             fields=[
                 dict(key='ob', shape=ob_dim),
-                dict(key='ac', shape=ac_dim),
+                dict(key='ac', shape=ac_dim, dtype=np.int64),
                 dict(key='rew'),
                 dict(key='next_ob', shape=ob_dim),
-                dict(key='done'),
+                dict(key='done', dtype = np.int32),
             ],
             **kwargs
         )
