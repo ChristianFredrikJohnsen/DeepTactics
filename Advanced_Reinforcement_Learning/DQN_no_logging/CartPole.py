@@ -1,8 +1,11 @@
 from DQNAgent import DQNAgent
 import gymnasium as gym
-
+import numpy as np
+# import wandb
 
 def train_agent(agent):
+
+    # wandb.init(project = agent.cfg.wandb_name, config = agent.cfg.get_members())
 
     train_env = gym.make(agent.cfg.env)
     eval_env = gym.make(agent.cfg.env, render_mode="human")
@@ -28,7 +31,14 @@ def train_agent(agent):
             if terminated or truncated:
                 break
         
-        if episode % 10 == 0:
+        
+        # if not losses:
+        #     wandb.log({"training return": episode_return, "train episode length": episode_length})
+        
+        # else:
+        #     losses = np.average(losses)
+        #     wandb.log({"training return": episode_return, "train episode length": episode_length, "loss": losses})
+        if episode % 100 == 0:
             print("Episode:", episode, "episode return:", episode_return, end="\t") if not losses else print("Episode:", episode, "episode return:", episode_return, "loss:", loss.item(), '\n')
 
         if episode % agent.cfg.update_target_network_freq == 0:
@@ -52,13 +62,15 @@ def train_agent(agent):
                     break
 
             print("Eval return:", episode_return, "\n")
+            # wandb.log({"eval return": episode_return, "eval episode length": episode_length})
+    # wandb.finish()
 
 if __name__ == '__main__':
 
     agent = DQNAgent(DQNAgent.Config())
     train_agent(agent)
 
-    agent.save("Advanced_Reinforcement_Learning/DQN_no_logging/testdqn.pyt")
+    agent.save("Advanced_Reinforcement_Learning/DQN_no_logging/soppDQN.pyt")
     
     # All of the observations which the agent has made.
     # print(agent.buffer['ac'])

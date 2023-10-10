@@ -1,10 +1,10 @@
-import numpy.random
 import torch
 
 from Config.Agent import Agent
 from Config.Config import Config as confg
 from QNetwork import QNetwork
 from Buffer import BasicBuffer
+import gymnasium as gym
 import numpy as np
 
 
@@ -16,18 +16,20 @@ class DQNAgent(Agent):
         env = "CartPole-v1"
         ob_dim = 4
         ac_dim = 2
-        hidden_dim = 2_000
+        hidden_dim = 600
 
         lr = 0.001
         epsilon = 0.05
         gamma = 0.99
-        batch_size = 5
 
-        min_buffer_size = 10
-        buffer_capacity = 20_000
-        episodes = 2
+        batch_size = 6
+        min_buffer_size = 10000
+        buffer_capacity = 50000
+
+        episodes = 20_000
         eval_freq = 100
-        update_target_network_freq = 200
+        
+        update_target_network_freq = 35
 
     def __init__(self, cfg):
         super().__init__(cfg)
@@ -48,7 +50,7 @@ class DQNAgent(Agent):
         self.loss = torch.nn.MSELoss()
 
     def exploration_action(self):
-        return numpy.random.randint(self.cfg.ac_dim)
+        return np.random.randint(self.cfg.ac_dim)
 
     def greedy_action(self, state):
         return torch.argmax(self.q_values(torch.tensor(state).to(self.device))).item()
@@ -57,10 +59,11 @@ class DQNAgent(Agent):
         return self.exploration_action() if np.random.rand() < self.epsilon else self.greedy_action(state)
 
     def save(self, path):
+        """Saving the model as a dictionary to minimize file size"""
         torch.save(self.q_values.state_dict(), path)
 
     def load(self, path):
-        self.q_values = torch.load(path); self.update_target_network()
+        state_dict = torch.load(path); self.q_values.load_state_dict(state_dict); self.update_target_network()
 
     def store_transition(self, ob, ac, rew, next_ob, done):
         self.buffer << {'ob': [ob], 'ac': [ac], 'rew': [rew], 'next_ob': [next_ob], 'done': [done]}
@@ -114,10 +117,25 @@ class DQNAgent(Agent):
             self.optimizer.step()
             
             return loss
+    
+    def play_cartpole(self, episodes = 10):
+        env = gym.make(agent.cfg.env, render_mode = "human")
+        for i in range(1, episodes + 1):
+            episode_return = 0
+            obs, _ = env.reset()
+            while True:
+                action = agent.greedy_action(obs)
+                next_obs, reward, terminated, truncated, _ = env.step(action)
+                obs = next_obs; episode_return += reward
+                if terminated or truncated:
+                    break
+            print(f'Episode {i} return: {episode_return}')      
 
 if __name__ == '__main__':
     agent = DQNAgent(DQNAgent.Config())
     print("Agent created.")
+    agent.load("Advanced_Reinforcement_Learning\DQN_no_logging\models\soppDQN.pyt")
+    agent.play_cartpole()
     # print(len(agent.buffer))
     # print(agent.buffer.data)
     # print("CUDA is available") if torch.cuda.is_available() else print("CUDA is not available")
