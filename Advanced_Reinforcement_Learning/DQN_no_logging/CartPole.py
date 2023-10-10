@@ -24,6 +24,7 @@ def train_agent(agent):
 
             agent.store_transition(obs, action, reward, next_obs, truncated or terminated)            
             loss = agent.update_q_values()
+            agent.epsilon_decay(episode)
             losses.append(loss.item()) if loss is not None else None
 
             obs = next_obs
@@ -40,6 +41,7 @@ def train_agent(agent):
         #     wandb.log({"training return": episode_return, "train episode length": episode_length, "loss": losses})
         if episode % 100 == 0:
             print("Episode:", episode, "episode return:", episode_return, end="\t") if not losses else print("Episode:", episode, "episode return:", episode_return, "loss:", loss.item(), '\n')
+            print(f'Epsilon: {agent.epsilon}\n')
 
         if episode % agent.cfg.update_target_network_freq == 0:
             agent.update_target_network()
@@ -70,7 +72,7 @@ if __name__ == '__main__':
     agent = DQNAgent(DQNAgent.Config())
     train_agent(agent)
 
-    agent.save("Advanced_Reinforcement_Learning/DQN_no_logging/soppDQN.pyt")
+    # agent.save("Advanced_Reinforcement_Learning/DQN_no_logging/gregor.pyt")
     
     # All of the observations which the agent has made.
     # print(agent.buffer['ac'])
