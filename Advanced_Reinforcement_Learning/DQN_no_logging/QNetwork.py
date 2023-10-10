@@ -3,16 +3,18 @@ import torch
 
 class QNetwork(nn.Module):
 
-    def __init__(self, ob_dim, action_space, hidden_dim=25):
+    def __init__(self, ob_dim, ac_dim, hidden_dim = 600):
         
         super().__init__()
         self.linear1 = nn.Linear(ob_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, hidden_dim)
-        self.linear3 = nn.Linear(hidden_dim, action_space)
+        self.linear3 = nn.Linear(hidden_dim, hidden_dim)
+        self.linear4 = nn.Linear(hidden_dim, hidden_dim)
+        self.linear5 = nn.Linear(hidden_dim, ac_dim)
         self.activation = nn.ReLU()
 
     def forward(self, x):        
-        return self.linear3(self.activation(self.linear2(self.activation(self.linear1(x)))))
+        return self.linear5(self.activation(self.linear4(self.activation(self.linear3(self.activation(self.linear2(self.activation(self.linear1(x)))))))))
 
 def num_params(module):
     return sum(param.numel() for param in module.parameters())
