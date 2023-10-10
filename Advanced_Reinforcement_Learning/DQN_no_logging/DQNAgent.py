@@ -18,18 +18,30 @@ class DQNAgent(Agent):
         ac_dim = 2
         hidden_dim = 600
 
+        # Learning rate should not be a concern.
         lr = 0.001
-        epsilon = 0.05
+
+
+        ### The epsilon value might need to be changed, a decay method might be needed.
+        epsilon = 0.1
+        flatline_episode = 3000
+        
+        # I don't believe that the value of the discount factor is all that important.
         gamma = 0.99
 
+
+        # Not too sure about what these values should be.
+        # Batch size, min_buffer_size, buffer_capacity and update_target_network_freq are the main culprits.
         batch_size = 6
         min_buffer_size = 10000
         buffer_capacity = 50000
+        
+        # Might need to look at how often this one should be updated.
+        update_target_network_freq = 35
 
         episodes = 20_000
         eval_freq = 100
         
-        update_target_network_freq = 35
 
     def __init__(self, cfg):
         super().__init__(cfg)
@@ -70,9 +82,14 @@ class DQNAgent(Agent):
 
     def update_target_network(self):
         self.target_network.load_state_dict(self.q_values.state_dict())
+    
+    def epsilon_decay(self, i):
+        """Using an epsilon decay function similar to the one used in the original DQN-paper."""
+        end_point = 1 - self.epsilon; start_point = 1
+        self.epsilon = start_point - (start_point - end_point) * (i / self.cfg.flatline_episode) if i < self.cfg.flatline_episode else end_point
 
     def update_q_values(self):
-        
+
         if self.buffer.size < self.cfg.min_buffer_size:
             return None
         
@@ -95,6 +112,7 @@ class DQNAgent(Agent):
             # q_values(ob) returns a tensor (batch_size, ac_dim), where each row represents the q values for the given ob.
             # We use gather to get the q value for the action that was taken. ac.view(-1, 1) converts the array of actions into a column vector.
             ### Currently however, the actions are already a column vector, so this is not necessary.
+            # The column vector containing action values stores indices used to get the q values for the actions that were taken.
 
             # The result is a tensor (batch_size, 1), which we squeeze to get a tensor (batch_size, )
             # This is the predicted action value q(s, a) for each sample in the batch.
