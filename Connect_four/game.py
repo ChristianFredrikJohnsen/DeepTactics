@@ -75,6 +75,9 @@ class ConnectFour:
                 if self.board[r][c] == piece and self.board[r-1][c+1] == piece and self.board[r-2][c+2] == piece and self.board[r-3][c+3] == piece:
                     return True
 
+    def reset(self):
+        self.board = [[0] * self.COLUMN_COUNT for r in range(self.ROW_COUNT)]
+
     def run(self):
         while self.running:
             for event in pygame.event.get():
