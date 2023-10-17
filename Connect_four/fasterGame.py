@@ -4,14 +4,11 @@ class ConnectFour:
     
     def __init__(self):
         
-
         self.ROW_COUNT = 6
         self.COLUMN_COUNT = 7
         self.turn = 0
         self.running = True
-        self.action_space = self.ActionSpace(7)
-
-
+        self.action_space = 7
 
     def drop_piece(self, row, col, piece):
         self.board[row][col] = piece
@@ -52,56 +49,54 @@ class ConnectFour:
 
     def reset(self):
         self.board = np.zeros((self.ROW_COUNT, self.COLUMN_COUNT))
-        return self.board
+        return self.board.flatten()
     
 
     def generate_action(self):
         self.turn += 1
-        legal_moves = [x for x in range(6) if self.is_valid_location(x)]
+        legal_moves = [x for x in range(7) if self.is_valid_location(x)]
         action = np.random.choice(legal_moves)
-        self.step(action)
-        return np.random.randint(0, 7)
+        row = self.get_next_open_row(action)
+        piece = -1 if self.turn % 2 == 0 else 1
+        self.drop_piece(row, action, piece)
+
+        if self.winning_move(-1 * piece):
+            return (self.board.flatten(), -1, True)
+        if self.turn == 42:
+            return (self.board.flatten(), 0, True)
+        else:
+            if piece == 1:
+                return (self.board.flatten(), 0, False)
+            
+            else:
+                return (self.board.flatten() * -1, 0, False)
+
+        #return action
 
     def step(self, action):
-
-        row = self.get_next_open_row(action)
-        piece = 1 if self.turn % 2 == 0 else -1
-        self.drop_piece(row, action, piece)
+        """
+        The agent does an action, and the environment returns the next state, the reward, and whether the game is over.
+        The action number corresponds to the column which the piece should be dropped in.
+        return: (next_state, reward, done)
+        """
+        
         self.turn += 1
+        row = self.get_next_open_row(action)
+        piece = -1 if self.turn % 2 == 0 else 1
+        self.drop_piece(row, action, piece)
+        
 
         if self.winning_move(piece):
             if piece == 1:
-                return (self.board, 1, True)
+                return (self.board.flatten(), 1, True)
             else:
-                return (self.board * -1, 1, True)
+                return (self.board.flatten() * -1, 1, True)
         
         if self.turn == 42:
-            return (self.board, 0, True)
+            return (self.board.flatten(), 0, True)
         
-        self.generate_action()
+        returnself.generate_action()
         
-        if self.winning_move(-1 * piece):
-            return (self.board, -1, True)
-        
-        if self.turn == 42:
-            return (self.board, 0, True)
-
-        else:
-            
-            if piece == 1:
-                return (self.board, 0, False)
-            
-            else:
-                return (self.board * -1, 0, False)
-
-        
-
-
-   
-    ### reset
-    ### step
-
-
+       
 if __name__ == "__main__":
-    game = ConnectFour()
-    game.run()
+    print("NEIN")
