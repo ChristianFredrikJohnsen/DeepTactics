@@ -65,7 +65,7 @@ class ConnectFour:
     def step(self, action):
 
         row = self.get_next_open_row(action)
-        piece = (-1) ** (self.turn % 2)
+        piece = 1 if self.turn % 2 == 0 else -1
         self.drop_piece(row, action, piece)
         self.turn += 1
 
@@ -75,12 +75,22 @@ class ConnectFour:
             else:
                 return (self.board * -1, 1, True)
         
+        if self.turn == 42:
+            return (self.board, 0, True)
+        
         self.generate_action()
         
+        if self.winning_move(-1 * piece):
+            return (self.board, -1, True)
+        
+        if self.turn == 42:
+            return (self.board, 0, True)
 
         else:
+            
             if piece == 1:
                 return (self.board, 0, False)
+            
             else:
                 return (self.board * -1, 0, False)
 
