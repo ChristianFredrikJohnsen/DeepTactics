@@ -2,7 +2,9 @@ import pygame
 import sys
 
 class ConnectFour:
+    
     def __init__(self):
+        
         pygame.init()
 
         self.WIDTH, self.HEIGHT = 700, 600
@@ -53,7 +55,6 @@ class ConnectFour:
         # Check horizontal locations for win
         for c in range(self.COLUMN_COUNT - 3):
             for r in range(self.ROW_COUNT):
-                self.counter += 1
                 if self.board[r][c] == piece and self.board[r][c+1] == piece and self.board[r][c+2] == piece and self.board[r][c+3] == piece:
                     return True
 
@@ -107,6 +108,10 @@ class ConnectFour:
                         self.draw_board()
 
             pygame.display.update()
+
+    ### reset
+    ### step
+
 
 if __name__ == "__main__":
     game = ConnectFour()
