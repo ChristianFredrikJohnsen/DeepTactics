@@ -71,5 +71,3 @@ class ConnectFour:
             return (outputBoard, 0, True)
         else:
             return (outputBoard, 0, False)
-        
-    
