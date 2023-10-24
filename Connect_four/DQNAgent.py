@@ -12,11 +12,11 @@ import numpy as np
 class DQNAgent(Agent):
     
     class Config(confg):
-
+        
         wandb_name = "DQN-CartPole"
         env = "CartPole-v1"
-        ac_dim = 1
-        ob_dim = 4
+        ac_dim = 7
+        ob_dim = 42
         action_space = 2
         hidden_dim = 25
 
