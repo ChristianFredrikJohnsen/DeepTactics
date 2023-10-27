@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from QNetwork import QNetwork
 from Connect_four import ConnectFour
-from game import ConnectFourPygame
+from icecream import ic
 
 from random import sample
 
@@ -14,14 +14,10 @@ from colorama import Fore, Style, init
 
 class QLearningAgent():
     def __init__(self, action_dim, observed_dim, learning_rate_initial, epsilon, gamma, hidden_dim, decay_rate = 0.001, batch=200, maxlen=2000):
-        self.action_dim = action_dim
-        self.observed_dim = observed_dim
-        self.learning_rate_initial = learning_rate_initial
-        self.learning_rate = learning_rate_initial
-        self.epsilon = epsilon
-        self.epsilon_initial = epsilon
-        self.gamma = gamma
-        self.batch = batch
+        
+        self.action_dim = action_dim; self.observed_dim = observed_dim; self.learning_rate_initial = learning_rate_initial
+        self.learning_rate = learning_rate_initial; self.epsilon = epsilon; self.epsilon_initial = epsilon
+        self.gamma = gamma; self.batch = batch
         
         self.this_episode = 0
         self.decay_rate = decay_rate
@@ -56,23 +52,14 @@ class QLearningAgent():
 
     def load(self, filename):
         self.Q_network.load_state_dict(torch.load(filename))
-        #self.Q_network.eval() #Tar av dropout
         
     def copy_nn(self):
         self.opponent_Q_network.load_state_dict(self.Q_network.state_dict())
-        #self.Q_network.eval() #Tar av dropout
     
     def compute_loss(self, batch):
         # Unpack the batch
-        states, actions, rewards, next_states, dones = zip(*batch)
+        states, actions, rewards, next_states, dones = batch
         
-        # Convert to tensors
-        states = torch.stack(states)
-        actions = torch.tensor(actions)
-        rewards = torch.tensor(rewards, dtype=torch.float32)
-        next_states = torch.stack(next_states)
-        dones = torch.tensor(dones, dtype=torch.float32)
-
         # Compute current Q-values
         current_q_values = self.Q_network(states).gather(1, actions.unsqueeze(-1)).squeeze(-1)
 
@@ -114,8 +101,8 @@ class QLearningAgent():
                 value_func = self.Q_network.forward(state) # Predict
                 action = self.act(value_func, env) # Get action
                 
-                observation, reward, done = env.step(action) # Do action
-                next_state  = torch.tensor(observation, dtype=torch.float32)
+                next_state, reward, done = env.step(action) # Do action
+                next_state  = torch.tensor(next_state, dtype=torch.float32)
                 score += reward
                 self.buffer.append((state, action, reward, next_state, done))
                 
@@ -127,7 +114,7 @@ class QLearningAgent():
                 
                 # Training
                 if len(self.buffer) > self.batch:
-
+                    self.compute_loss(self.get_random_samples())
                     states, actions, rewards, next_states, dones = self.get_random_samples() # Get a bunch of samples.
                     
                     target_max, _ = self.Q_network(next_states).max(dim=1) # Calcluate the max_values for next state
@@ -183,13 +170,11 @@ class QLearningAgent():
         elif num == 0:
             print(f"{Fore.WHITE} 0 ", end='')   # White
 
-    def check_winrate(lst, result, index):
-        lst[index] = result
     
     def get_random_samples(self):
         random_sample = sample(self.buffer, self.batch)
         states = torch.stack([x[0].to(torch.float) for x in random_sample])
-        actions = torch.tensor([x[1] for x in random_sample], dtype=torch.float32)
+        actions = torch.tensor([x[1] for x in random_sample], dtype=torch.int64)
         rewards = torch.tensor([x[2] for x in random_sample], dtype=torch.float32)
         next_states = torch.stack([x[3].to(torch.float) for x in random_sample])
         dones = torch.tensor([x[4] for x in random_sample], dtype=torch.float32)
@@ -197,7 +182,11 @@ class QLearningAgent():
     
 
 if __name__ == '__main__':
-    filename = "connect4_dim=500.pk1"
+
+    # Get the parameters you are working with.
+    filename = "models/connect4_dim=500.pk1"
+    
+    # Intialize the agent.
     agent = QLearningAgent(
         7, 42, # action_dim, observed_dim 
         learning_rate_initial=0.0001, 
@@ -206,12 +195,16 @@ if __name__ == '__main__':
         hidden_dim=500, 
         decay_rate=0.001 
         )
+    
+    # Load the already trained agent
     agent.load(filename)
+    
+    # Start training. If you want to stop training, press ctrl + c, and the agent will be saved.
     try:
-        agent.train(episodes=101_000)
+        agent.train(episodes=201)
     except KeyboardInterrupt:
         print("\nSaving!")
         agent.save(filename)
-        pass
-    
+
+    # Save the agent after training.    
     agent.save(filename)

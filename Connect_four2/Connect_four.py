@@ -4,53 +4,65 @@ class ConnectFour:
     
     def __init__(self):
         
-        self.ROW_COUNT = 6
-        self.COLUMN_COUNT = 7
-        self.turn = 0
-        self.running = True
-        self.action_space = 7
+        self.HEIGHT = 6; self.WIDTH = 7
+        self.action_space = 7; self.observation_space = 42
+        self.turn = 0 # Keep track of the turn number.
+        self.board = np.zeros((self.HEIGHT, self.WIDTH), dtype = int) # Initialize a 7*6 board.
+        self.row_cache = np.zeros(self.WIDTH, dtype = int) # Initialize a 7 element array to keep track of the next empty row in each column.
         self.reset()
 
+
     def drop_piece(self, col, piece):
-        row = self.get_next_open_row(col)
-        self.board[row][col] = piece
+        """
+        Drops a piece in the specified column.
+        Does not perform any checks, so it is possible to drop a piece in a full column.
+        """
+        self.board[self.row_cache[col]][col] = piece # Drop the piece in the first empty row.
+        self.row_cache[col] += 1 # Increment the row cache.
+        return self.row_cache[col] - 1 # Return the row the piece was dropped in.
 
     def is_valid_location(self, col):
-        return self.board[self.ROW_COUNT - 1][col] == 0
+        """
+        Checks that the column is not full.
+        """
+        return self.row_cache[col] < self.HEIGHT
 
-    def get_next_open_row(self, col):
-        for r in range(self.ROW_COUNT):
-            if self.board[r][col] == 0:
-                return r
 
-    def winning_move(self, piece):
+    def winning_move(self, piece, col, row):
+        """
+        Checks if the player has won.
+
+        NOTE:
+        We have tried to make this as efficient as possible, but it is still not very fast.
+        The reason why we want this to be efficient is because the method is called every time a player makes a move,
+        and when you do hundreds of thousands of iterations, it adds up.
+        """
+
+        if self.turn < 7:
+            return False  # It is not possible to win before turn 7.
         
-        # Check horizontal locations for win
-        for c in range(self.COLUMN_COUNT - 3):
-            for r in range(self.ROW_COUNT):
-                if self.board[r][c] == piece and self.board[r][c+1] == piece and self.board[r][c+2] == piece and self.board[r][c+3] == piece:
-                    return True
-
-        # Check vertical locations for win
-        for c in range(self.COLUMN_COUNT):
-            for r in range(self.ROW_COUNT - 3):
-                if self.board[r][c] == piece and self.board[r+1][c] == piece and self.board[r+2][c] == piece and self.board[r+3][c] == piece:
-                    return True
-    
-        # Check positively sloped diagonals
-        for c in range(self.COLUMN_COUNT - 3):
-            for r in range(self.ROW_COUNT - 3):
-                if self.board[r][c] == piece and self.board[r+1][c+1] == piece and self.board[r+2][c+2] == piece and self.board[r+3][c+3] == piece:
-                    return True
-
-        # Check negatively sloped diagonals
-        for c in range(self.COLUMN_COUNT - 3):
-            for r in range(3, self.ROW_COUNT):
-                if self.board[r][c] == piece and self.board[r-1][c+1] == piece and self.board[r-2][c+2] == piece and self.board[r-3][c+3] == piece:
-                    return True
+        directions = [(0, 1), (1, 0), (1, 1), (1, -1)] # Iterate over all directions, horizontal, vertical, diagonal up and diagonal down.
+        for dr, dc in directions:
+            count = 0
+            
+            for i in range(-3, 4):
+                r, c = row + i * dr, col + i * dc
+                if 0 <= r < self.HEIGHT and 0 <= c < self.WIDTH and self.board[r][c] == piece: # Checking if coordinate is within the board and if the piece is the same as the one we are looking for.
+                    count += 1
+                    if count == 4: # If we have had four consecutive pieces in a row, we have won.
+                        return True
+                else:
+                    count = 0
+                    if i > 0: # It is no longer possible to win in this direction.
+                        break
+        return False
 
     def reset(self):
-        self.board = np.zeros((self.ROW_COUNT, self.COLUMN_COUNT))
+        """
+        Reset the game to start a new training run.
+        The board is set to all zeros.
+        """
+        self.board.fill(0); self.row_cache.fill(0); self.turn = 0 # Reset the board, row cache, and turn counter.
         return self.board.flatten()
 
     def step(self, action):
@@ -62,12 +74,17 @@ class ConnectFour:
         
         self.turn += 1
         piece = -1 if self.turn % 2 == 0 else 1
-        self.drop_piece(action, piece)
+        row = self.drop_piece(action, piece)
         outputBoard = self.board.flatten()
         
-        if self.winning_move(piece):
+        if not self.is_valid_location(action): # Illegal move, opponent wins.
+            return (outputBoard, -1, True)
+        
+        if self.winning_move(piece, action, row): # Bot won
             return (outputBoard, 1, True)
+        
         if self.turn == 42: # Draw
             return (outputBoard, 0, True)
-        else:
+        
+        else: # Game continues
             return (outputBoard, 0, False)
