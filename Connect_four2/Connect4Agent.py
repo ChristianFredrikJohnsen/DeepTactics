@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from QNetwork import QNetwork
 from Connect_four import ConnectFour
+from debug_utils.print_board import print_status
 from icecream import ic
 
 from random import sample
@@ -32,8 +33,11 @@ class QLearningAgent():
         init(autoreset=True) # Colorama lol
 
     
-    def decay_epsilon(self):
-        self.epsilon = self.epsilon_initial / (1 + self.decay_rate * self.this_episode)
+    def decay_epsilon(self, episode_num):
+        """
+        Decay the epsilon value based on epsiode number.
+        """
+        self.epsilon = self.epsilon_initial / (1 + self.decay_rate * episode_num)
         
     def act(self, value_func, env):
         if np.random.rand() < self.epsilon: # Do random action
@@ -48,29 +52,37 @@ class QLearningAgent():
 
         
     def save(self, filename):
+        """
+        Saves the model parameters to a file.
+        """
         torch.save(self.Q_network.state_dict(), filename)
 
     def load(self, filename):
+        """
+        Loads the model parameters from a file.
+        """
         self.Q_network.load_state_dict(torch.load(filename))
         
     def copy_nn(self):
+        """
+        Copy the current Q-network to the opponent Q-network.
+        """
         self.opponent_Q_network.load_state_dict(self.Q_network.state_dict())
     
     def compute_loss(self, batch):
-        # Unpack the batch
-        states, actions, rewards, next_states, dones = batch
+        """
+        Compute the loss for a batch of state-action transitions.
+        We are currently using the MSE loss function.
+        """
+        states, actions, rewards, next_states, dones = batch # Unpack batch        
         
-        # Compute current Q-values
-        current_q_values = self.Q_network(states).gather(1, actions.unsqueeze(-1)).squeeze(-1)
+        current_q_values = self.Q_network(states).gather(1, actions.unsqueeze(-1)).squeeze(-1) # Compute current Q-values using policy network
 
-        # Compute next Q-values
-        next_q_values = self.Q_network(next_states).max(1)[0]
+        next_q_values = self.Q_network(next_states).max(1)[0] # Compute next Q-values using target network
         
-        # Compute target Q-values
-        target_q_values = rewards + (1 - dones) * self.gamma * next_q_values
+        target_q_values = rewards + (1 - dones) * self.gamma * next_q_values # Compute target Q-values
 
-        # Compute loss
-        loss = nn.MSELoss()(current_q_values, target_q_values.detach())
+        loss = nn.MSELoss()(current_q_values, target_q_values.detach()) # Compute loss
 
         return loss
   
@@ -93,7 +105,7 @@ class QLearningAgent():
             observation = env.reset()
             state = torch.tensor(observation, dtype=torch.float32)
 
-            self.decay_epsilon()
+            self.decay_epsilon(episode_num)
             
             score = 0
             while(True):
@@ -147,28 +159,7 @@ class QLearningAgent():
                     break
                 
             if self.this_episode % 100 == 0:
-                
-                if(score == 1):
-                    print(f"{Fore.RED}episode: {self.this_episode} score: {score} epsilon: {self.epsilon} winrate: {np.mean(results)}{Style.RESET_ALL}")
-                elif(score == -1):
-                    print(f"{Fore.YELLOW}episode: {self.this_episode} score: {score} epsilon: {self.epsilon} winrate: {np.mean(results)}{Style.RESET_ALL}")
-
-                #print("State:\n", str(torch.flip(state.reshape(6,7), [0]).numpy())[1:-1], "\n")
-                self.print_board(torch.flip(state.reshape(6,7), [0]).numpy())
-            
-    def print_board(self, board):
-        for i in range(6):
-            for j in range(7):
-                self.print_color(board[i][j])
-            print()
-    
-    def print_color(self, num):
-        if num == 1:
-            print(f"{Fore.RED} 1 ", end='')     # Yellow
-        elif num == -1:
-            print(f"{Fore.YELLOW}-1 ", end='')  # Green
-        elif num == 0:
-            print(f"{Fore.WHITE} 0 ", end='')   # White
+                print_status(score, episode_num, state, results, self.epsilon)
 
     
     def get_random_samples(self):
@@ -184,7 +175,7 @@ class QLearningAgent():
 if __name__ == '__main__':
 
     # Get the parameters you are working with.
-    filename = "models/connect4_dim=500.pk1"
+    filename = "models/connect4_christian_bad.pk1"
     
     # Intialize the agent.
     agent = QLearningAgent(
