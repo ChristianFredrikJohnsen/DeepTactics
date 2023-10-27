@@ -1,13 +1,13 @@
-import numpy as np
+import torch; import numpy as np
 
-class ConnectFour:
+class ConnectFourEnvironment():
     
     def __init__(self):
         
         self.HEIGHT = 6; self.WIDTH = 7
         self.action_space = 7; self.observation_space = 42
         self.turn = 0 # Keep track of the turn number.
-        self.board = np.zeros((self.HEIGHT, self.WIDTH), dtype = int) # Initialize a 7*6 board.
+        self.board = torch.zeros((self.HEIGHT, self.WIDTH), dtype = torch.float32) # Initialize a 7*6 board, using torch.float32 as that is standard for PyTorch.
         self.row_cache = np.zeros(self.WIDTH, dtype = int) # Initialize a 7 element array to keep track of the next empty row in each column.
         self.reset()
 
@@ -62,7 +62,7 @@ class ConnectFour:
         Reset the game to start a new training run.
         The board is set to all zeros.
         """
-        self.board.fill(0); self.row_cache.fill(0); self.turn = 0 # Reset the board, row cache, and turn counter.
+        self.board.fill_(0); self.row_cache.fill(0); self.turn = 0 # Reset the board, row cache, and turn counter.
         return self.board.flatten()
 
     def step(self, action):

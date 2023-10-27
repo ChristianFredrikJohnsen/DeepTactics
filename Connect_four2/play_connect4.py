@@ -3,7 +3,7 @@ from QNetwork import QNetwork; from icecream import ic
 
 class ConnectFourPygame:
     
-    def __init__(self):
+    def __init__(self, path):
         
         pygame.init(); pygame.display.set_caption("Connect Four"); pygame.display.set_icon(pygame.image.load("cogito_blue.png")) # Initialize pygame and set the window caption and icon.
         self.WINDOW_WIDTH, self.WINDOW_HEIGHT = 700, 600; self.window = pygame.display.set_mode((self.WINDOW_WIDTH, self.WINDOW_HEIGHT)) # Setting up the game window.
@@ -15,7 +15,8 @@ class ConnectFourPygame:
 
         self.board = np.array([[0] * self.WIDTH for r in range(self.HEIGHT)]); self.turn = 0; self.running = True # Game logic variables.
 
-        self.opponent = QNetwork(42, 7, 100) # Initialize the opponent. Q network with 42 inputs, 7 outputs and 100 hidden nodes.
+        self.opponent = QNetwork(42, 7, 500) # Initialize the opponent. Q network with 42 inputs, 7 outputs and 500 hidden nodes.
+        self.load_opponent(path)
 
         pygame.font.init(); self.font = pygame.font.Font(None, 74) # Setting up font for the text.
         self.draw_board() # Draw the board on the screen.
@@ -103,7 +104,6 @@ class ConnectFourPygame:
         The opponent is always player 2, so the state is flipped before being passed to the neural network.
         We always choose the action that maximizes the q value.
         """
-        # self.print_board(torch.flip(state.reshape(6,7), [0]).numpy())
         self.print_qvalues(state)
         return torch.argmax(self.opponent(torch.tensor(state, dtype = torch.float32))) # Get the best action
 
@@ -270,5 +270,5 @@ class ConnectFourPygame:
         pygame.time.wait(3000)
 
 if __name__ == "__main__":
-    game = ConnectFourPygame()
-    game.run()
+    game = ConnectFourPygame("models/connect4_christian_horrible.pk1")
+    game.run_with_bot()
