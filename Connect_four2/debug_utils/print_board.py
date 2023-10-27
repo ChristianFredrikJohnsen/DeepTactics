@@ -11,7 +11,7 @@ def print_status(score, episode_num, state, results, epsilon):
     elif(score == -1):
         print(f"{Fore.YELLOW}episode: {episode_num} score: {score} epsilon: {epsilon} winrate: {np.mean(results)}{Style.RESET_ALL}")
 
-    print_board(torch.flip(state.reshape(6,7), [0]).numpy())
+    print_board(torch.flip(state.reshape(6,7), [0]).cpu().numpy())
 
 def print_board(board):
     """

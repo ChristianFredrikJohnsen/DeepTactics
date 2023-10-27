@@ -97,7 +97,7 @@ class QLearningAgent():
         
         target_q_values = rewards + (1 - dones) * self.gamma * next_q_values # Compute target Q-values
 
-        loss = self.loss(current_q_values, target_q_values.detach()) # Compute loss
+        loss = self.loss(current_q_values, target_q_values) # Compute loss
 
         return loss
     
@@ -109,8 +109,6 @@ class QLearningAgent():
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-
-
 
     def train(self, episodes, render = False):
         """
@@ -125,7 +123,7 @@ class QLearningAgent():
         for episode_num in range(1, episodes + 1):
             
             self.log_and_copy_network(episode_num, results)
-            state = env.reset(); score = 0
+            state = env.reset().to(self.device); score = 0
             
             while(True):
                 # Play connect 4 and train the network, based on samples from the replay buffer.
@@ -166,7 +164,7 @@ class QLearningAgent():
         if not opponent:
             self.buffer.append(QLearningAgent.Transition(state, action, reward, next_state, done))
 
-        return next_state, reward, done
+        return next_state.to(self.device), reward, done
     
     def update_parameters(self):
         """
@@ -197,7 +195,6 @@ class QLearningAgent():
         rewards = torch.tensor([x.reward for x in random_sample], dtype=torch.int8).to(self.device)
         next_states = torch.stack([x.next_state for x in random_sample]).to(self.device)
         dones = torch.tensor([x.done for x in random_sample], dtype=torch.int8).to(self.device)
-        print(dones)
         return (states, actions, rewards, next_states, dones)
     
 
