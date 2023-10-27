@@ -1,164 +1,151 @@
+import numpy.random
 import torch
+import torch.nn as nn
 
 from Config.Agent import Agent
 from Config.Config import Config as confg
 from QNetwork import QNetwork
 from Buffer import BasicBuffer
-import gymnasium as gym
 import numpy as np
 
 
 class DQNAgent(Agent):
     
     class Config(confg):
-
+        
         wandb_name = "DQN-CartPole"
         env = "CartPole-v1"
-        ob_dim = 42
         ac_dim = 7
-        hidden_dim = 600
+        ob_dim = 42
+        action_space = 2
+        hidden_dim = 25
 
-        # Learning rate should not be a concern.
-        lr = 0.001
-
-
-        ### The epsilon value might need to be changed, a decay method might be needed.
-        epsilon = 0.1
-        flatline_episode = 3000
-        
-        # I don't believe that the value of the discount factor is all that important.
+        lr = 0.01
+        epsilon = 0.05
         gamma = 0.99
+        batch_size = 2
 
-
-        # Not too sure about what these values should be.
-        # Batch size, min_buffer_size, buffer_capacity and update_target_network_freq are the main culprits.
-        batch_size = 6
         min_buffer_size = 100
         buffer_capacity = 10000
-        
-        # Might need to look at how often this one should be updated.
+        episodes = 5000
+        eval_freq = 500
         update_target_network_freq = 35
 
-        episodes = 1
-        eval_freq = 100
-        
+        # Reduce overestimation https://arxiv.org/pdf/1509.06461.pdf
+        double_dqn = True
 
     def __init__(self, cfg):
         super().__init__(cfg)
 
         self.lr = cfg.lr
         self.epsilon = cfg.epsilon
-        self.epsilon_initial = self.epsilon
         self.gamma = cfg.gamma
-        self.decay_rate = 0.005
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.q_values = QNetwork(self.cfg.ob_dim, self.cfg.ac_dim, self.cfg.hidden_dim).to(self.device)
-        self.target_network = QNetwork(cfg.ob_dim, cfg.ac_dim, cfg.hidden_dim).to(self.device)
+        # Initialize networks
+        self.q_values = QNetwork(cfg.ob_dim, cfg.action_space, cfg.hidden_dim)
+        self.target_network = QNetwork(cfg.ob_dim, cfg.action_space, cfg.hidden_dim)
         self.update_target_network()
 
-        # A mysterious 1 appears instead of ac dim, need to figure out what that is about.
-        self.buffer = BasicBuffer.make_default(cfg.buffer_capacity, cfg.ob_dim, 1, wrap=True)
+        # Init replay buffer
+        self.buffer = BasicBuffer.make_default(cfg.buffer_capacity, cfg.ob_dim, cfg.ac_dim, wrap=True)
 
+        # Init optimizer stuff
         self.optimizer = torch.optim.Adam(self.q_values.parameters(), cfg.lr)
-        self.loss = torch.nn.MSELoss()
+        self.loss = nn.MSELoss()
 
-    def exploration_action(self):
-        return np.random.randint(self.cfg.ac_dim)
+    def _exploration_action(self):
+        return numpy.random.randint(self.cfg.action_space)
 
-    def greedy_action(self, state):
-        return torch.argmax(self.q_values(torch.tensor(state, dtype=torch.float32).to(self.device))).item()
+    def _greedy_action(self, state):
+        # Make the state a tensor so the network will accept it
+        state = torch.tensor(state)
+        return torch.argmax(self.q_values(state)).item()
 
     def act(self, state):
-        return self.exploration_action() if np.random.rand() < self.epsilon else self.greedy_action(state)
+        if np.random.rand() < self.cfg.epsilon:
+            return self._exploration_action()
+        else:
+            return self._greedy_action(state)
 
     def save(self, path):
-        """Saving the model as a dictionary to minimize file size"""
         torch.save(self.q_values.state_dict(), path)
 
     def load(self, path):
-        state_dict = torch.load(path); self.q_values.load_state_dict(state_dict); self.update_target_network()
+        self.q_values = torch.load(path)
+        self.update_target_network()
 
     def store_transition(self, ob, ac, rew, next_ob, done):
-        self.buffer << {'ob': [ob], 'ac': [ac], 'rew': [rew], 'next_ob': [next_ob], 'done': [done]}
+        self.buffer << {'ob': [ob],
+                        'ac': [ac],
+                        'rew': [rew],
+                        'next_ob': [next_ob],
+                        'done': [done]
+                        }
 
     def update_target_network(self):
+        # Update the target network
         self.target_network.load_state_dict(self.q_values.state_dict())
-    
-    def epsilon_decay(self, i):
-        """Other implementation"""
-        self.epsilon = self.epsilon_initial * 1/(1 + self.decay_rate * i)
-
-        """Using an epsilon decay function similar to the one used in the original DQN-paper."""
-        #end_point = 1 - self.epsilon; start_point = 1
-        #self.epsilon = start_point - (start_point - end_point) * (i / self.cfg.flatline_episode) if i < self.cfg.flatline_episode else end_point
 
     def update_q_values(self):
-
+        
+        # If we don't have enough transitions in the buffer, we don't update the Q-network just yet.
         if self.buffer.size < self.cfg.min_buffer_size:
             return None
         
+        # In the case that the buffer size is above minimum:
         else:
+            
+            # Get from buffer
+            ob, ac, rew, next_ob, done = self.buffer.sample(self.cfg.batch_size)
+            ac = ac.type(torch.long)
+            done = done.type(torch.int)
 
-            ob, ac, rew, next_ob, done = self.buffer.sample(batch_size = self.cfg.batch_size, device = self.device)
+            # At this point I am going to focus on the case where we don't have double DQN, whatever that is.
+            if not self.cfg.double_dqn:
+                # I just assume that this retrieving that maximum action-value function which we can get from our current state.
+                # I don't know why we write(dim = 1), but i am not going to say anything on that yet.
+                # set target
+                target_max, _ = self.target_network(next_ob).max(dim=1)
+            
+            # I don't know what this thing is doing yet, I'll take a look at it sometime later.
+            else:
+                # Double DQN
+                target_ac = self.q_values(next_ob).argmax(dim=-1)
+                target_max = self.target_network(next_ob).gather(1, target_ac.view(-1, 1)).squeeze()
 
-            # Next ob is a tensor [batch_size, ob_dim]
-            # Dim1 specifies that we want to take the max value of each row
-            # The returned tensors have shape (batch_size, ), representing the target_max for each sample in the batch
-            # Target_max represents the maximum value of the next ob, given the action that maximizes the q value, while _ represents the index of the max value
-            target_max, _ = self.target_network(next_ob).max(dim=1)
-
-            # td_target is a tensor (batch_size, )
-            # It tells us what the target value for each sample in the batch should be.
+            # * (1-done) is a trick for setting target to just reward for the last step.
             td_target = rew + self.cfg.gamma * target_max * (1 - done)
+
+            # Predict q-values and index using action
+            old_values = self.q_values(ob).gather(1, ac.view(-1, 1)).squeeze()
+
+            loss = self.loss(td_target, old_values)
             
-            # Action values is a tensor (batch_size, )
-            # It tells us what the predicted value for each sample in the batch is.
-            # q_values(ob) returns a tensor (batch_size, ac_dim), where each row represents the q values for the given ob.
-            # We use gather to get the q value for the action that was taken. ac.view(-1, 1) converts the array of actions into a column vector.
-            ### Currently however, the actions are already a column vector, so this is not necessary.
-            # The column vector containing action values stores indices used to get the q values for the actions that were taken.
-
-            # The result is a tensor (batch_size, 1), which we squeeze to get a tensor (batch_size, )
-            # This is the predicted action value q(s, a) for each sample in the batch.
-
-            predicted_action_values = self.q_values(ob).gather(1, ac.view(-1, 1)).squeeze()
-            
-            # We use mean squared error to calculate the loss between the predicted action values and the target values.
-
-            loss = self.loss(td_target, predicted_action_values)
-
-            ### Backpropagation
-            
-            # Reset the gradients to zero
+            # optimize the model
             self.optimizer.zero_grad()
-            
-            # Calculate the gradients
             loss.backward()
-
-            # Update the weights, using the optimization algorithm Adaptive Moment Estimation (Adam).
             self.optimizer.step()
-            
-            return loss
-    
-    def play_cartpole(self, episodes = 10):
-        env = gym.make(agent.cfg.env, render_mode = "human")
-        for i in range(1, episodes + 1):
-            episode_return = 0
-            obs, _ = env.reset()
-            while True:
-                action = agent.greedy_action(obs)
-                next_obs, reward, terminated, truncated, _ = env.step(action)
-                obs = next_obs; episode_return += reward
-                if terminated or truncated:
-                    break
-            print(f'Episode {i} return: {episode_return}')      
+
+        return loss
+
 
 if __name__ == '__main__':
+    
     agent = DQNAgent(DQNAgent.Config())
-    # print("Agent created.")
-    # agent.load("Advanced_Reinforcement_Learning\DQN_no_logging\models\soppDQN.pyt")
-    # agent.play_cartpole()
-    # print(len(agent.buffer))
-    # print(agent.buffer.data)
-    # print("CUDA is available") if torch.cuda.is_available() else print("CUDA is not available")
+
+    import gymnasium as gym
+
+    env = gym.make("CartPole-v1")
+
+    obs, info = env.reset()
+
+    for i in range(1000):
+        action = env.action_space.sample()
+        next_obs, reward, terminated, truncated, info = env.step(action)
+        reward = 1
+
+        agent.store_transition(obs, action, reward, next_obs, terminated)
+
+        obs = next_obs
+
+    agent.update_q_values()
