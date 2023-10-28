@@ -1,5 +1,5 @@
 import pygame; import torch; import numpy as np
-from QNetwork import QNetwork; from icecream import ic
+from QNetwork import QNetwork; from icecream import ic; from debug_utils.print_board import print_state
 
 class ConnectFourPygame:
     
@@ -13,7 +13,7 @@ class ConnectFourPygame:
         self.column_cache = np.zeros(self.WIDTH, dtype = int) # Initialize a 7 element array to keep track of the next empty row in each column.
         self.SQUARESIZE = 100; self.RADIUS = int(self.SQUARESIZE / 2 - 5) # Square size for the columns and radius of the pieces.
 
-        self.board = np.array([[0] * self.WIDTH for r in range(self.HEIGHT)]); self.turn = 0; self.running = True # Game logic variables.
+        self.board = torch.tensor([[0] * self.WIDTH for r in range(self.HEIGHT)], dtype = torch.float32); self.turn = 0; self.running = True # Game logic variables.
 
         self.opponent = QNetwork(42, 7, 500) # Initialize the opponent. Q network with 42 inputs, 7 outputs and 500 hidden nodes.
         self.load_opponent(path)
@@ -62,7 +62,7 @@ class ConnectFourPygame:
         """
         Checks that the column is not full.
         """
-        return self.column_cache[col] < self.HEIGHT
+        return self.column_cache[col] != self.HEIGHT
 
     def winning_move(self, piece, col, row):
         """
@@ -105,7 +105,7 @@ class ConnectFourPygame:
         We always choose the action that maximizes the q value.
         """
         self.print_qvalues(state)
-        return torch.argmax(self.opponent(torch.tensor(state, dtype = torch.float32))) # Get the best action
+        return torch.argmax(self.opponent(state)) # Get the best action
 
     def colorize(self, qvalue, q_values):
         """
@@ -150,7 +150,7 @@ class ConnectFourPygame:
         This is useful for debugging, and it is also interesting to see how the q-values change during training.
         """
 
-        q_values = self.opponent(torch.tensor(state, dtype = torch.float32)).detach().numpy() # A list containing the q-values for each action
+        q_values = self.opponent(state).detach().numpy() # A list containing the q-values for each action
         column_names = [f"Column{i}" for i in range(1, len(q_values) + 1)] # Create a list of column names
 
         # Decide the width of each column. We take the max length between each header and its corresponding value
@@ -178,7 +178,7 @@ class ConnectFourPygame:
                         self.turn += 1
                         self.play_move(player, col)
 
-    def run_with_bot(self):
+    def run_with_bot(self, print_bot_board = False):
         """
         Play connect 4 against a bot trained with reinforcement learning.
         """
@@ -193,14 +193,15 @@ class ConnectFourPygame:
                     if self.is_valid_location(col):
                         self.turn += 1
                         self.play_move(player, col)
-                    
-                    self.generate_ai_turn()
+                        self.generate_ai_turn(print_bot_board)
 
-    def generate_ai_turn(self):
+    def generate_ai_turn(self, print_bot_board):
         """
         Using the trained neural network to generate a move for the opponent.
         """
         if not self.running: return
+        bot_board = self.board * (-1) # Flip the board so that the bot can use the same neural network as the one used for training.
+        if print_bot_board: print_state(bot_board.flatten())
         col = self.get_move((self.board * (-1)).flatten())
         player = 1 if self.turn % 2 == 0 else -1 # AI should always be player -1, but we check just in case.
         self.turn += 1 # Assuming that the bot makes a legal move.
@@ -271,4 +272,4 @@ class ConnectFourPygame:
 
 if __name__ == "__main__":
     game = ConnectFourPygame("models/connect4_christian_terrible.pk1")
-    game.run_with_bot()
+    game.run_with_bot(print_bot_board = True)

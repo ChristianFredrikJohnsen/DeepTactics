@@ -90,20 +90,24 @@ class ConnectFourEnvironment():
         
         else: # Game continues
             return (outputBoard, 0, False)
-        
+
+def print_procedure(action):
+    print(f'State before action:')
+    print_state(env.board.flatten())
+    state, reward, done = env.step(action)
+    print(f'Player: {2 if env.turn % 2 == 0 else 1}, Action: {action}')
+    print(f'Next state:')
+    print_state(state)
+    print(f'reward: {reward}, done: {done}')
 
 if __name__ == '__main__':
     env = ConnectFourEnvironment()
-    print_state(env.step(3)[0])
-    print_state(env.step(3)[0])
-    print_state(env.step(3)[0])
-    print_state(env.step(3)[0])
-    print_state(env.step(3)[0])
-    state, reward, done = env.step(3)
-    print_state(state)
-    print(f'reward: {reward}, done: {done}')
-    print_state(env.board.flatten())
-    state, reward, done = env.step(3)
-    print_state(state)
-    print(f'reward: {reward}, done: {done}')
-    print_state(env.board.flatten())
+
+    # Simulating some moves for debugging purposes.
+    print_procedure(3) # Move 1, Player 1
+    print_procedure(3) # Move 2, Player 2
+    print_procedure(3) # Move 3, Player 1
+    print_procedure(3) # Move 4, Player 2
+    print_procedure(3) # Move 5, Player 1
+    print_procedure(3) # Move 6, Player 2
+    print_procedure(3) # Move 7, Illegal move, Player 1 should lose.

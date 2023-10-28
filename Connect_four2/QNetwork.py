@@ -17,3 +17,7 @@ class QNetwork(nn.Module):
         x = self.activation(x)
         x = self.lin3(x)
         return x
+    
+if __name__ == '__main__':
+    net = QNetwork(42, 7, 500)
+    print(f"Number of parameters: {sum(p.numel() for p in net.parameters())}") # Check the number of parameters.
