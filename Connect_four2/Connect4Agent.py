@@ -130,7 +130,7 @@ class QLearningAgent():
         for episode_num in range(1, episodes + 1):
             
             self.log_and_copy_network(episode_num, results, win_check)
-            score, winrate_num, final_state = self.play_until_done(env, episode_num)
+            reward, winrate_num, final_state = self.play_until_done(env, episode_num)
             results[episode_num % win_check] = winrate_num
             
             self.decay_epsilon(episode_num)
@@ -140,7 +140,7 @@ class QLearningAgent():
                 self.target_network.load_state_dict(self.Q_network.state_dict())
 
             if episode_num % 100 == 0:
-                print_status(score, episode_num, win_check, final_state, results, self.epsilon)
+                print_status(reward, episode_num, win_check, final_state, results, self.epsilon)
         
 
     def play_until_done(self, env, episode_num):
@@ -160,7 +160,7 @@ class QLearningAgent():
                 if(done):
                     return (reward, reward if reward == 1 else 0, state)
                 
-                state, reward, done = self.perform_action(env, state, opponent=True)
+                state, reward, done = self.perform_action(env, -state, opponent=True)
                 reward = -reward # If opponent wins, reward is negative
                 
                 if(done):
@@ -173,7 +173,7 @@ class QLearningAgent():
                     if(done):
                         return (reward, reward if reward == 1 else 0, state)
                     
-                    state, reward, done = self.perform_action(env, state)
+                    state, reward, done = self.perform_action(env, -state)
                     self.update_parameters(print = False) 
                     if(done):
                         return (reward, reward if reward == 1 else 0, state)
@@ -227,7 +227,7 @@ class QLearningAgent():
 
 if __name__ == '__main__':
 
-    filename = "models/connect4_christian_terrible.pk1" # Get the parameters you are working with.
+    filename = "models/connect4_christian_useless.pk1" # Get the parameters you are working with.
     
     # Intialize the agent.
     agent = QLearningAgent(
@@ -241,11 +241,11 @@ if __name__ == '__main__':
         )
     
     print(agent.device)
-    agent.load(filename) # Load the already trained agent
+    # agent.load(filename) # Load the already trained agent
     
     # Start training. If you want to stop training, press ctrl + c, and the agent will be saved.
     try:
-        agent.train(episodes=100_000)
+        agent.train(episodes=10_000_000)
         print("\nSaving!")
         agent.save(filename) # Save the agent after training. 
     except KeyboardInterrupt:
