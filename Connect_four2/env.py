@@ -75,7 +75,7 @@ class ConnectFourEnvironment():
         if not agent_moves_first:
             self.opponent_move() # The opponent makes the first move.
         
-        return self.board.flatten().clone() # Return the board as a flattened array.
+        return self.board.flatten().clone() * (-1) # Return the board as a flattened array, and make sure that the agent sees the board from its own perspective.
 
     def step(self, action):
         """
@@ -117,7 +117,7 @@ class ConnectFourEnvironment():
             return (state, 1, True)
         
         row = self.drop_piece(action, piece) # Drop the piece in the specified column.
-        next_state = self.board.flatten().clone() # Clone the board to avoid referencing the same object.
+        next_state = self.get_correct_board_representation(piece) # Clone the board to avoid a problem where the stored board is changed after the board is returned.
         
         if self.winning_move(piece, action, row): # Opponent won
             return (next_state, -1, True) # Rewards are given from the perspective of the agent.

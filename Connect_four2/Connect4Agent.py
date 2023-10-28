@@ -157,19 +157,18 @@ class QLearningAgent():
                 return (reward, state) # Return the reward and the final state of the game.
         
 
-    def perform_action(self, env, state, opponent=False):
+    def perform_action(self, env, state):
         """
         Perform an action in the environment, and add the state-action transition to the replay buffer.
         Returns the next state, the reward, and whether the game is over.
         """
-        action = self.opponent_act(state) if opponent else self.act(state)
+        action = self.act(state)
         next_state, reward, done = env.step(action)
         
-        # Add the state-action transition to the replay buffer, if it is not the opponent who is playing.
-        if not opponent:
-            self.buffer.append(QLearningAgent.Transition(state, action, reward, next_state, done))
+        # Add the state-action transition to the replay buffer.
+        self.buffer.append(QLearningAgent.Transition(state, action, reward, next_state, done))
 
-        return next_state.to(self.device), reward, done
+        return next_state, reward, done
     
     def update_parameters(self, print):
         """
@@ -221,7 +220,7 @@ if __name__ == '__main__':
         )
     
     print(agent.device)
-    # agent.load(filename) # Load the already trained agent
+    agent.load(filename) # Load the already trained agent
     
     # Start training. If you want to stop training, press ctrl + c, and the agent will be saved.
     try:
