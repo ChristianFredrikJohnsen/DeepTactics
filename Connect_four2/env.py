@@ -13,6 +13,7 @@ class ConnectFourEnvironment():
         self.board = torch.zeros((self.HEIGHT, self.WIDTH), dtype = torch.float32, device = self.device) # Initialize a 7*6 board, using torch.float32 as that is standard for PyTorch.
         self.row_cache = torch.zeros(self.WIDTH, dtype = torch.int8) # Initialize a 7 element array to keep track of the next empty row in each column.
         self.opponent_Q_network = opponent.to(self.device) # Load the opponent, which is an earlier version of the trained Q-network.
+        self.legal_moves = torch.ones(self.action_space, dtype = torch.float32, device = self.device) # Initialize a 7 element array to keep track of the legal moves.
 
     def drop_piece(self, col, piece):
         """
@@ -59,11 +60,27 @@ class ConnectFourEnvironment():
                         break
         return False
 
+    def update_legal_moves(self):
+        """
+        Updates the list of legal moves.
+        This method is used by the opponent to get a list of legal moves.
+        """
+        for i in range(self.action_space):
+            self.legal_moves[i] = self.row_cache[i] < self.HEIGHT
+
     def opponent_act(self, state):
         """
         The opponent is using a greedy policy.
+        We must give the opponent a list of legal moves, otherwise it may end
+        up in an infinite loop where it tries to make an illegal move.
         """
-        return torch.argmax(self.opponent_Q_network(state)).item()
+        self.update_legal_moves() # Update the list of legal moves.
+        qvals = self.opponent_Q_network(state) # Get the Q-values for the current state.
+        for i in range(self.action_space):
+            if not self.legal_moves[i]: qvals[i] = float('-inf') # If the move is illegal, we set the Q-value to -inf. 
+        action = torch.argmax(qvals).item() # Get the action with the highest Q-value among the legal moves.
+
+        return action
 
     def reset(self, agent_moves_first):
         """
@@ -92,8 +109,9 @@ class ConnectFourEnvironment():
         """
         self.turn += 1; piece = -1 if self.turn % 2 == 0 else 1
         board = self.get_correct_board_representation(piece) # Make sure that the agent sees the board from its own perspective.
-        if not self.is_valid_location(action): # If the bot wants to make an illegal move, the opponent wins.
-            return (board, -1, True)
+        if not self.is_valid_location(action): # If the bot wants to make an illegal move, we punish it, and we force it to make a new (and hopefully legal) move.
+            self.turn -= 1 # We do not want to increment the turn counter if the bot makes an illegal move, it must try again.
+            return (board, -1, False)
         
         row = self.drop_piece(action, piece) # Drop the piece in the specified column.
         next_state = self.get_correct_board_representation(piece)
@@ -113,9 +131,6 @@ class ConnectFourEnvironment():
         self.turn += 1; piece = -1 if self.turn % 2 == 0 else 1
         state = self.get_correct_board_representation(piece)
         action = self.opponent_act(state) # Make sure that the opponent sees the board from its own perspective.
-        if not self.is_valid_location(action): # If the opponent wants to make an illegal move, the agent wins.
-            return (state * (-1), 1, True) # States and rewards are given from the perspective of the agent.
-        
         row = self.drop_piece(action, piece) # Drop the piece in the specified column.
         next_state = self.get_correct_board_representation(piece) # Clone the board to avoid a problem where the stored board is changed after the board is returned.
         

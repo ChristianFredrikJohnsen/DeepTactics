@@ -1,6 +1,6 @@
 import torch; from colorama import Fore, Style; import numpy as np
 
-def print_status(score, episode_num, win_check, final_state, results, epsilon):
+def print_status(score, episode_num, win_check, final_state, results, epsilon, buffer):
     """
     Prints game information to the terminal.
     This includes the episode number, the score, the winrate, and the board state.
@@ -8,7 +8,7 @@ def print_status(score, episode_num, win_check, final_state, results, epsilon):
     num_results = episode_num%win_check if episode_num < win_check else win_check
     agent = 'red' if episode_num%2 == 1 else 'yellow'
     color = Fore.RED if agent == 'red' and score == 1 or agent == 'yellow' and score == -1 else Fore.YELLOW
-    print(f"{color}agent: {agent}; episode: {episode_num}; score: {score}; epsilon: {epsilon}; winrate: {np.mean(results[:num_results])}{Style.RESET_ALL}")
+    print(f"{color}agent: {agent}; episode: {episode_num}; score: {score}; epsilon: {epsilon}; buffer size: {len(buffer)}; winrate: {np.mean(results[:num_results])}{Style.RESET_ALL}")
     
     if agent == 'yellow': final_state *= -1 # We want to see the board from agent 1's perspective.
     print_board(torch.flip(final_state.reshape(6,7), [0]).cpu().numpy())
