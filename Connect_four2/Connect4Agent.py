@@ -11,7 +11,7 @@ class QLearningAgent():
     Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'done')) # A named tuple to store state-action transitions.
     
     
-    def __init__(self, action_dim, observed_dim, learning_rate_initial, epsilon, gamma, hidden_dim, decay_rate = 0.001, batch=200, maxlen=1_000_000, update_target_network_freq=100):
+    def __init__(self, action_dim, observed_dim, learning_rate_initial, epsilon, gamma, hidden_dim, decay_rate = 0.001, batch=5, maxlen=1_000_000, update_target_network_freq=100):
         """
         Setting up all the parameters for the agent.
         Intializing the Q-network, the target network, the opponent network, the replay buffer, the loss function and the optimizer.
@@ -70,8 +70,8 @@ class QLearningAgent():
         """
         Loads the model parameters from a file.
         """
-        self.Q_network.load_state_dict(torch.load(filename))
-        self.opponent_Q_network.load_state_dict(torch.load(filename + "_opponent"))
+        self.Q_network.load_state_dict(torch.load(filename, map_location=self.device))
+        self.opponent_Q_network.load_state_dict(torch.load(filename + "_opponent", map_location=self.device))
         self.target_network.load_state_dict(self.Q_network.state_dict())
         
     def copy_nn(self):
@@ -90,11 +90,11 @@ class QLearningAgent():
         We are currently using the MSE loss function.
         """
         states, actions, rewards, next_states, dones = batch # Unpack batch        
-        
+
         current_q_values = self.Q_network(states).gather(1, actions).squeeze() # Compute current Q-values using policy network
 
         next_q_values = self.target_network(next_states).max(1)[0] # Compute next Q-values using target network
-        
+
         target_q_values = rewards + (1 - dones) * self.gamma * next_q_values # Compute target Q-values
 
         loss = self.loss(current_q_values, target_q_values) # Compute loss
@@ -192,33 +192,35 @@ class QLearningAgent():
         random_sample = sample(self.buffer, self.batch)
         states = torch.stack([x.state for x in random_sample]).to(self.device)
         actions = torch.tensor([x.action for x in random_sample], dtype=torch.int64).unsqueeze(-1).to(self.device) # Making sure that the actions are of type long, and that the tensor has the correct shape.
-        rewards = torch.tensor([x.reward for x in random_sample], dtype=torch.int8).to(self.device)
+        rewards = torch.tensor([x.reward for x in random_sample], dtype=torch.float32).to(self.device)
         next_states = torch.stack([x.next_state for x in random_sample]).to(self.device)
-        dones = torch.tensor([x.done for x in random_sample], dtype=torch.int8).to(self.device)
+        dones = torch.tensor([x.done for x in random_sample], dtype=torch.float32).to(self.device)
         return (states, actions, rewards, next_states, dones)
     
 
 if __name__ == '__main__':
 
-    filename = "models/connect4_christian_horrible.pk1" # Get the parameters you are working with.
+    filename = "models/connect4_christian_terrible.pk1" # Get the parameters you are working with.
     
     # Intialize the agent.
     agent = QLearningAgent(
-        7, 42, # action_dim, observation_dim
+        action_dim=7, 
+        observed_dim=42,
         learning_rate_initial=0.0001, 
         epsilon=0.5, 
         gamma=1, 
         hidden_dim=500, 
         decay_rate=0.001 
         )
+    
     print(agent.device)
-    agent.load(filename) # Load the already trained agent
+    # agent.load(filename) # Load the already trained agent
     
     # Start training. If you want to stop training, press ctrl + c, and the agent will be saved.
     try:
-        agent.train(episodes=100_000_000)
+        agent.train(episodes=1_000_000)
+        print("\nSaving!")
+        agent.save(filename) # Save the agent after training. 
     except KeyboardInterrupt:
         print("\nSaving!")
-        agent.save(filename)
-
-    agent.save(filename) # Save the agent after training.  
+        agent.save(filename) # Save the agent if training is interrupted. 

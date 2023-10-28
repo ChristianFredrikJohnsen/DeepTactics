@@ -1,4 +1,5 @@
-import torch; import numpy as np
+import torch
+from debug_utils.print_board import print_state
 
 class ConnectFourEnvironment():
     
@@ -8,7 +9,7 @@ class ConnectFourEnvironment():
         self.action_space = 7; self.observation_space = 42
         self.turn = 0 # Keep track of the turn number.
         self.board = torch.zeros((self.HEIGHT, self.WIDTH), dtype = torch.float32) # Initialize a 7*6 board, using torch.float32 as that is standard for PyTorch.
-        self.row_cache = np.zeros(self.WIDTH, dtype = int) # Initialize a 7 element array to keep track of the next empty row in each column.
+        self.row_cache = torch.zeros(self.WIDTH, dtype = torch.int8) # Initialize a 7 element array to keep track of the next empty row in each column.
         self.reset()
 
 
@@ -62,7 +63,7 @@ class ConnectFourEnvironment():
         Reset the game to start a new training run.
         The board is set to all zeros.
         """
-        self.board.fill_(0); self.row_cache.fill(0); self.turn = 0 # Reset the board, row cache, and turn counter.
+        self.board.fill_(0); self.row_cache.fill_(0); self.turn = 0 # Reset the board, row cache, and turn counter.
         return self.board.flatten()
 
     def step(self, action):
@@ -74,11 +75,12 @@ class ConnectFourEnvironment():
         
         self.turn += 1
         piece = -1 if self.turn % 2 == 0 else 1
-        row = self.drop_piece(action, piece)
-        outputBoard = self.board.flatten()
         
-        if not self.is_valid_location(action): # Illegal move, opponent wins.
-            return (outputBoard, -1, True)
+        if not self.is_valid_location(action): # If the bot wants to make an illegal move, the opponent wins.
+            return (self.board.flatten().clone(), -1, True)
+        
+        row = self.drop_piece(action, piece) # Drop the piece in the specified column.
+        outputBoard = self.board.flatten().clone() # Clone the board to avoid referencing the same object.
         
         if self.winning_move(piece, action, row): # Bot won
             return (outputBoard, 1, True)
@@ -88,3 +90,20 @@ class ConnectFourEnvironment():
         
         else: # Game continues
             return (outputBoard, 0, False)
+        
+
+if __name__ == '__main__':
+    env = ConnectFourEnvironment()
+    print_state(env.step(3)[0])
+    print_state(env.step(3)[0])
+    print_state(env.step(3)[0])
+    print_state(env.step(3)[0])
+    print_state(env.step(3)[0])
+    state, reward, done = env.step(3)
+    print_state(state)
+    print(f'reward: {reward}, done: {done}')
+    print_state(env.board.flatten())
+    state, reward, done = env.step(3)
+    print_state(state)
+    print(f'reward: {reward}, done: {done}')
+    print_state(env.board.flatten())

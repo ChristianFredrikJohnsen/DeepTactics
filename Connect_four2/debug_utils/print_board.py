@@ -13,6 +13,13 @@ def print_status(score, episode_num, state, results, epsilon):
 
     print_board(torch.flip(state.reshape(6,7), [0]).cpu().numpy())
 
+def print_state(state):
+    """
+    Prints the state to the terminal.
+    """
+    print_board(torch.flip(state.reshape(6,7), [0]).cpu().numpy())
+    print('~' * 20)
+
 def print_board(board):
     """
     Prints the board to the terminal.
