@@ -271,5 +271,5 @@ class ConnectFourPygame:
         pygame.time.wait(3000)
 
 if __name__ == "__main__":
-    game = ConnectFourPygame("models/connect4_christian_terrible.pk1")
+    game = ConnectFourPygame("models/connect4_christian_abomination.pk1")
     game.run_with_bot(print_bot_board = True)

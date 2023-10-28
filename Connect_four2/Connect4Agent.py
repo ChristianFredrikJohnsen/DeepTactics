@@ -207,7 +207,7 @@ class QLearningAgent():
 
 if __name__ == '__main__':
 
-    filename = "models/connect4_christian_useless.pk1" # Get the parameters you are working with.
+    filename = "models/connect4_christian_abomination.pk1" # Get the parameters you are working with.
     
     # Intialize the agent.
     agent = QLearningAgent(

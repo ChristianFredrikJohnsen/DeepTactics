@@ -8,9 +8,11 @@ class ConnectFourEnvironment():
         self.HEIGHT = 6; self.WIDTH = 7
         self.action_space = 7; self.observation_space = 42
         self.turn = 0 # Keep track of the turn number.
-        self.board = torch.zeros((self.HEIGHT, self.WIDTH), dtype = torch.float32) # Initialize a 7*6 board, using torch.float32 as that is standard for PyTorch.
+        
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') # Use GPU if available, otherwise use CPU.
+        self.board = torch.zeros((self.HEIGHT, self.WIDTH), dtype = torch.float32, device = self.device) # Initialize a 7*6 board, using torch.float32 as that is standard for PyTorch.
         self.row_cache = torch.zeros(self.WIDTH, dtype = torch.int8) # Initialize a 7 element array to keep track of the next empty row in each column.
-        self.opponent_Q_network = opponent # Load the opponent, which is an earlier version of the trained Q-network.
+        self.opponent_Q_network = opponent.to(self.device) # Load the opponent, which is an earlier version of the trained Q-network.
 
     def drop_piece(self, col, piece):
         """
@@ -144,13 +146,14 @@ def print_procedure(action):
     print(f'reward: {reward}, done: {done}')
 
 if __name__ == '__main__':
-    env = ConnectFourEnvironment()
+    pass
+    # env = ConnectFourEnvironment()
 
-    # Simulating some moves for debugging purposes.
-    print_procedure(3) # Move 1, Player 1
-    print_procedure(3) # Move 2, Player 2
-    print_procedure(3) # Move 3, Player 1
-    print_procedure(3) # Move 4, Player 2
-    print_procedure(3) # Move 5, Player 1
-    print_procedure(3) # Move 6, Player 2
-    print_procedure(3) # Move 7, Illegal move, Player 1 should lose.
+    # # Simulating some moves for debugging purposes.
+    # print_procedure(3) # Move 1, Player 1
+    # print_procedure(3) # Move 2, Player 2
+    # print_procedure(3) # Move 3, Player 1
+    # print_procedure(3) # Move 4, Player 2
+    # print_procedure(3) # Move 5, Player 1
+    # print_procedure(3) # Move 6, Player 2
+    # print_procedure(3) # Move 7, Illegal move, Player 1 should lose.
