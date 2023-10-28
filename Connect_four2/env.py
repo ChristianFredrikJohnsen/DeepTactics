@@ -114,19 +114,19 @@ class ConnectFourEnvironment():
         state = self.get_correct_board_representation(piece)
         action = self.opponent_act(state) # Make sure that the opponent sees the board from its own perspective.
         if not self.is_valid_location(action): # If the opponent wants to make an illegal move, the agent wins.
-            return (state, 1, True)
+            return (state * (-1), 1, True) # States and rewards are given from the perspective of the agent.
         
         row = self.drop_piece(action, piece) # Drop the piece in the specified column.
         next_state = self.get_correct_board_representation(piece) # Clone the board to avoid a problem where the stored board is changed after the board is returned.
         
         if self.winning_move(piece, action, row): # Opponent won
-            return (next_state, -1, True) # Rewards are given from the perspective of the agent.
+            return (next_state * (-1), -1, True) # Rewards are given from the perspective of the agent.
         
         if self.turn == 42: # Draw
-            return (next_state, 0, True)
+            return (next_state * (-1), 0, True)
         
         else: # The game is not over.
-            return (next_state, 0, False) # This is where you will usually end up.
+            return (next_state * (-1), 0, False) # This is where you will usually end up.
         
     def get_correct_board_representation(self, piece):
         """
@@ -146,7 +146,8 @@ def print_procedure(env, action):
     print(f'reward: {reward}, done: {done}')
 
 if __name__ == '__main__':
-    pass
+    print("You ran the environment file! Good job!")
+
     # env = ConnectFourEnvironment()
 
     # # Simulating some moves for debugging purposes.

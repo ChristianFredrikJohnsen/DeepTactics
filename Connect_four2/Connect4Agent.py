@@ -11,7 +11,7 @@ class QLearningAgent():
     Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'done')) # A named tuple to store state-action transitions.
     
     
-    def __init__(self, action_dim, observed_dim, learning_rate_initial, epsilon, gamma, hidden_dim, decay_rate = 0.001, batch=32, min_batch_size = 3000, maxlen=1_000_000, update_target_network_freq=200):
+    def __init__(self, action_dim, observed_dim, learning_rate_initial, epsilon, gamma, hidden_dim, decay_rate = 0.001, batch=50, min_batch_size = 3000, maxlen=1_000_000, update_target_network_freq=200):
         """
         Setting up all the parameters for the agent.
         Intializing the Q-network, the target network, the opponent network, the replay buffer, the loss function and the optimizer.
@@ -124,6 +124,7 @@ class QLearningAgent():
         for episode_num in range(1, episodes + 1):
             
             if self.log_and_copy_network(episode_num, results, win_check): # If the opponent network was updated, we must update the environment such that the opponent is using the new network.
+                results.fill(0) # Reset the results list.
                 env = ConnectFourEnvironment(self.opponent_Q_network)
             
             reward, final_state = self.play_until_done(env, episode_num)

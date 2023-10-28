@@ -218,7 +218,7 @@ class ConnectFourPygame:
         if self.winning_move(player, col, row):
             self.player_won(player)
 
-        if self.turn == 42: # 42 moves means that the entire board is full with pieces, and no one has won.
+        if self.turn == 42: # 42 moves means that the entire board is filled with pieces, and no one has won.
             self.draw()
 
         self.draw_board()
