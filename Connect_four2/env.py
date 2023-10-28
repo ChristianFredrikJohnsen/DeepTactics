@@ -136,7 +136,7 @@ class ConnectFourEnvironment():
         """
         return self.board.flatten().clone() * piece
 
-def print_procedure(action):
+def print_procedure(env, action):
     print(f'State before action:')
     print_state(env.board.flatten())
     state, reward, done = env.step(action)
