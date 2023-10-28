@@ -49,12 +49,6 @@ class QLearningAgent():
         else: # Do greedy action / "best" action
             qvals = self.Q_network(state)
             return torch.argmax(qvals).item()
-    
-    def opponent_act(self, state):
-        """
-        The opponent is using a greedy policy.
-        """
-        return torch.argmax(self.opponent_Q_network(state)).item()
 
     def save(self, filename):
         """
@@ -126,12 +120,15 @@ class QLearningAgent():
         This way, the agent is always playing against a strong opponent.
         """
 
-        env = ConnectFourEnvironment(); results = np.zeros(win_check) # Specifying the environment, and setting up a list to store the results of the last 100 episodes.
+        env = ConnectFourEnvironment(self.opponent_Q_network); results = np.zeros(win_check) # Specifying the environment, and setting up a list to store the results of the last 100 episodes.
         for episode_num in range(1, episodes + 1):
             
-            self.log_and_copy_network(episode_num, results, win_check)
-            reward, winrate_num, final_state = self.play_until_done(env, episode_num)
-            results[episode_num % win_check] = winrate_num
+            if self.log_and_copy_network(episode_num, results, win_check): # If the opponent network was updated, we must update the environment such that the opponent is using the new network.
+                env = ConnectFourEnvironment(self.opponent_Q_network)
+            
+            reward, final_state = self.play_until_done(env, episode_num)
+            win = 1 if reward == 1 else 0 # Record if the agent won or not.
+            results[episode_num % win_check] = win
             
             self.decay_epsilon(episode_num)
 
@@ -148,36 +145,16 @@ class QLearningAgent():
         This is the where the network plays a game of connect 4 against itself.
         On odd-numbered episodes, the opponent is playing first, and on even-numbered episodes, the agent is playing second.
         The network is trained based on samples from the replay buffer.
-        Returns: a tuple, where the first element is 1 if the agent won and 0 otherwise.
-        The second element is the final state of the game.
+        Returns: The reward and the final state of the game.
         """
-        state = env.reset().to(self.device) # Reset the environment and get the initial state.
+        agent_moves_first = episode_num % 2 == 1 # If the episode number is odd, the agent is playing first.
+        state = env.reset(agent_moves_first).to(self.device) # Reset the environment and get the initial state.
         
-        if episode_num % 2 == 1: # If the episode number is odd, the agent is playing first.
-            while(True):
-                state, reward, done = self.perform_action(env, state) # Perform an action in the environment, and add the state-action transition to the replay buffer.
-                self.update_parameters(print = False) # Sample a batch from the replay buffer and train the network.
-                if(done):
-                    return (reward, reward if reward == 1 else 0, state)
-                
-                state, reward, done = self.perform_action(env, -state, opponent=True)
-                reward = -reward # If opponent wins, reward is negative
-                
-                if(done):
-                    return (reward, reward if reward == 1 else 0, state)
-        
-        else: # If the episode number is even, the opponent is playing first.
-            while(True):
-                    state, reward, done = self.perform_action(env, state, opponent=True)
-                    reward = -reward # If opponent wins, reward is negative
-                    if(done):
-                        return (reward, reward if reward == 1 else 0, state)
-                    
-                    state, reward, done = self.perform_action(env, -state)
-                    self.update_parameters(print = False) 
-                    if(done):
-                        return (reward, reward if reward == 1 else 0, state)
-
+        while(True):
+            state, reward, done = self.perform_action(env, state) # Perform an action in the environment, and add the state-action transition to the replay buffer.
+            self.update_parameters(print = False) # Sample a batch from the replay buffer and train the network.
+            if(done):
+                return (reward, state) # Return the reward and the final state of the game.
         
 
     def perform_action(self, env, state, opponent=False):
@@ -206,11 +183,14 @@ class QLearningAgent():
     def log_and_copy_network(self, episode_num, results, win_check):
         """
         Log the results of the last 100 episodes, and copy the network if the winrate is above 75%.
+        Returns True if the opponent network was updated, and False otherwise.
         """
         if episode_num % win_check == 0:
             if np.mean(results) >= 0.9:
                 print("Copying network!")
                 self.copy_nn()
+                return True
+        return False
 
     def get_random_samples(self):
         """
