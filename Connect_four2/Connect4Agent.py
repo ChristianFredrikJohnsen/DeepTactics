@@ -124,6 +124,8 @@ class QLearningAgent():
         episodes_since_last_copy = 0 # Keep track of how many episodes have passed since the last copy of the network.
         for episode_num in range(1, episodes + 1):
             
+            episodes_since_last_copy += 1 # Increment the counter.
+
             if self.log_and_copy_network(episode_num, results, win_check): # If the opponent network was updated, we must update the environment such that the opponent is using the new network.
                 results.fill(0) # Reset the results list.
                 episodes_since_last_copy = 0 # Reset the counter.
