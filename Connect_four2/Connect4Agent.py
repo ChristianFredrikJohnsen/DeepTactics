@@ -136,14 +136,14 @@ class QLearningAgent():
             win = 1 if reward == 1 else 0 # Record if the agent won or not.
             results[episode_num % win_check] = win
             
-            self.decay_epsilon(episode_num)
+            self.decay_epsilon(episodes_since_last_copy) # Decay the exploration rate based on how many episodes have passed since the last copy of the network.
 
             # Update the target network.
             if episode_num % self.update_target_network_freq == 0:
                 self.target_network.load_state_dict(self.Q_network.state_dict())
 
             if episode_num % 100 == 0:
-                print_status(reward, episodes_since_last_copy, win_check, final_state, results, self.epsilon, self.buffer) # Display key information to the terminal.
+                print_status(reward, episode_num, episodes_since_last_copy, win_check, final_state, results, self.epsilon, self.buffer) # Display key information to the terminal.
 
 
     def play_until_done(self, env, episode_num):
@@ -256,7 +256,7 @@ if __name__ == '__main__':
     
     # Start training. If you want to stop training, press ctrl + c, and the agent will be saved.
     try:
-        agent.train(episodes=10_000_000)
+        agent.train(episodes=1_000_000_000) # 1 billion episodes, in practice this will run until you stop it with ctrl + c.
         print("\nSaving!")
         agent.save(filename) # Save the agent after training. 
     except KeyboardInterrupt:
