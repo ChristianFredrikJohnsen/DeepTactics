@@ -85,18 +85,12 @@ class QLearningAgent():
             ic(states, actions, rewards, next_states, dones)
 
         current_q_values = self.Q_network(states).gather(1, actions).squeeze() # Compute current Q-values using policy network
-        if print:
-            ic(current_q_values)
 
-        next_q_values = self.target_network(next_states).max(1)[0] # Compute next Q-values using target network
-        if print:
-            ic(next_q_values)
+        target_ac = self.Q_network(next_states).argmax(dim=-1)
+        target_max = self.target_network(next_states).gather(1, target_ac.view(-1, 1)).squeeze()
+        td_target = rewards + (1 - dones) * self.gamma * target_max # Compute target Q-values
 
-        target_q_values = rewards + (1 - dones) * self.gamma * next_q_values # Compute target Q-values
-        if print:
-            ic(target_q_values)
-
-        loss = self.loss(current_q_values, target_q_values) # Compute loss
+        loss = self.loss(current_q_values, td_target) # Compute loss
         if print:
             ic(loss)
 
@@ -233,7 +227,7 @@ class QLearningAgent():
 
 if __name__ == '__main__':
 
-    filename = "models/connect4_christian_egregious.pk1" # Get the parameters you are working with.
+    filename = "models/connect4_christian_bigboy.pk1" # Get the parameters you are working with.
     
     # Intialize the agent.
     agent = QLearningAgent(
@@ -242,7 +236,7 @@ if __name__ == '__main__':
         learning_rate_initial=0.0001, 
         epsilon=0.3, 
         gamma=1, 
-        hidden_dim=500, 
+        hidden_dim=1500, 
         decay_rate=0.001 
         )
     

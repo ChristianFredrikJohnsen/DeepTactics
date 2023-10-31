@@ -15,7 +15,7 @@ class ConnectFourPygame:
 
         self.board = torch.tensor([[0] * self.WIDTH for r in range(self.HEIGHT)], dtype = torch.float32); self.turn = 0; self.running = True # Game logic variables.
 
-        self.opponent = QNetwork(42, 7, 500) # Initialize the opponent. Q network with 42 inputs, 7 outputs and 500 hidden nodes.
+        self.opponent = QNetwork(42, 7, 1500) # Initialize the opponent. Q network with 42 inputs, 7 outputs and 500 hidden nodes.
         self.load_opponent(path)
 
         pygame.font.init(); self.font = pygame.font.Font(None, 74) # Setting up font for the text.
@@ -215,5 +215,5 @@ class ConnectFourPygame:
         pygame.time.wait(3000)
 
 if __name__ == "__main__":
-    game = ConnectFourPygame("models/connect4_christian_egregious.pk1")
+    game = ConnectFourPygame("models/connect4_christian_bigboy.pk1")
     game.run_with_bot(print_bot_board = True)
