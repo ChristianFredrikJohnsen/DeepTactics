@@ -58,7 +58,7 @@ class Network:
         
         return a 
     
-    def SGD(self, epochs: int, alpha: float,
+    def SGD(self, epochs: int, alpha: float, batch_size: int,
             training_data: tuple[torch.Tensor, torch.Tensor],
             test_data: tuple[torch.Tensor, torch.Tensor] = None):
         """
@@ -70,13 +70,18 @@ class Network:
         """
         
         x, y = training_data[0], training_data[1]
-        test_num = test_data[0].size(0) if test_data else 0
+        test_num = test_data[0].size(0) if test_data else 0 # Number of test examples.
+        n = x.size(0) # Number of training examples.
 
         for epoch in range(1, epochs + 1):
+            
+            indices = torch.randperm(n) # Randomize the indices of the training examples.
+            
+            for i in range(0, n, batch_size):
+                batch_indices = indices[i:i+batch_size] # Get the indices of the training examples in the mini-batch.
+                self.update_mini_batch(x[batch_indices], y[batch_indices], alpha)
 
-            self.update_mini_batch(x, y, alpha)
-
-            if (epoch % 1000 == 0 or epoch == epochs):
+            if (epoch % 10 == 0 or epoch == epochs):
 
                 if test_data:
                     print(f'Epoch {epoch}: {self.evaluate(test_data)} / {test_num}')
@@ -196,29 +201,28 @@ class Network:
 if __name__ == '__main__':
 
     ### Setup
+    prefix = 'Neural_Architectures/basic_dense_torch/trained_networks/'
+    file = '784_30_10V2.pyt'
+    filename = prefix + file
     net = Network([784, 30, 10])
-    ic(net.num_params)
     training_data, validation_data, test_data = mnist_loader_torch.load_data_wrapper_torch(net.device)
-    net.SGD(10000, 2.0, training_data, test_data=test_data)
+    ic(net.num_params)
     
-    net.save('Neural_Architectures/basic_dense_torch/trained_networks/test.pyt')
-    # net.load('Neural_Architectures/basic_dense_torch/trained_networks/784_30_10.pyt')
-    train1 = training_data[0][0].unsqueeze(1)
-    ic(net.feedforward(train1))
+    ### Training
+    try:
+        net.SGD(1000, 2.0, 100, training_data, test_data = test_data) # epochs, learning rate, batch size
+        print("\nSaving!")
+        net.save(filename)
+
+    except KeyboardInterrupt:
+        print("\nSaving!")
+        net.save(filename)
     
+    train1 = training_data[0][0].unsqueeze(1) 
+    ic(net.feedforward(train1)) # The network should predict a 5. To get the prediction, take the index of the largest value in the output layer.
 
     # Use cProfile to profile the SGD function for one epoch
     # cProfile.run('net.SGD(training_data, 1, 3.0, test_data=test_data)')
-
-"""
-TODO: Find out how to get batching incorporated into the network.
-
-"""
-
-
-
-
-
 
 """
 Insane optimization: Instead of calculating the gradient for each training example in the mini-batch separately,

@@ -1,8 +1,4 @@
-import pickle
-import gzip
-from torch.utils.data import DataLoader, TensorDataset
-import torch
-from icecream import ic
+import pickle; import gzip; import torch; from icecream import ic
 
 def load_data():
 
@@ -11,7 +7,7 @@ def load_data():
     f.close()
     return (training_data, validation_data, test_data)
 
-def load_data_wrapper_torch(device) -> tuple[DataLoader, list[tuple[torch.Tensor, torch.Tensor]], tuple[torch.Tensor, torch.Tensor]]:
+def load_data_wrapper_torch(device: torch.device) -> tuple[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]:
     
     training_data, validation_data, test_data = load_data()
 
@@ -34,11 +30,9 @@ def load_data_wrapper_torch(device) -> tuple[DataLoader, list[tuple[torch.Tensor
     return (alt, validation_data, test_data)
 
 def vectorized_result(j: int):
-    
-    # With my own words, i would say that this creates a column vector which represents the target for our network.
-    # Our network has 10 outputs, so the target for the network must be a 10D column vector.
-    # We set the target of the network to be 0's for all numbers except the correct number, which should be labelled as 1.
-
+    """
+    Returns a 10-dimensional unit vector with a 1.0 in the j'th position and zeroes elsewhere.
+    """
     return torch.tensor([int(i == j) for i in range(10)])
 
 def validation_conversion(dataset: list[tuple[torch.Tensor, torch.Tensor]], device) -> tuple[torch.Tensor, torch.Tensor]:
