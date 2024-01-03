@@ -17,17 +17,11 @@ def load_data_wrapper_torch(device: torch.device) -> tuple[tuple[torch.Tensor, t
     tensor_x = torch.stack([torch.Tensor(inp).to(device) for inp in train_x]) # shape: (50000, 784)
     tensor_y = torch.stack([torch.Tensor(output).to(device) for output in train_y]) # shape: (50000, 10)
 
-    alt = (tensor_x, tensor_y)
-
-    """
-    It is way faster to load the entire dataset into the GPU memory, rather than loading it in batches.
-    """
-    # mnist_dataset = TensorDataset(tensor_x, tensor_y)
-    # mnist_dataloader = DataLoader(mnist_dataset, batch_size = 50_000, shuffle=True)
+    training_data = (tensor_x, tensor_y) # shape: (50000, 784), (50000, 10)
     
     validation_data = validation_conversion(validation_data, device) # shape: (10000, 784), (10000, )
     test_data = validation_conversion(test_data, device) # shape: (10000, 784), (10000, )
-    return (alt, validation_data, test_data)
+    return (training_data, validation_data, test_data)
 
 def vectorized_result(j: int):
     """
