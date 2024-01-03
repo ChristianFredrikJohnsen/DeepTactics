@@ -4,6 +4,7 @@ import cProfile
 import torch
 from sigmoid_activation import quick_sigmoid, sigmoid
 from mse_loss import mse_prime
+from data_visualizer_mnist import visualize_sample, visualize_samples
 
 class Network:
 
@@ -198,31 +199,51 @@ class Network:
         """
         return sum(w.size().numel() + b.size().numel() for w, b in zip(self.weights, self.biases))
 
-if __name__ == '__main__':
-
-    ### Setup
-    prefix = 'Neural_Architectures/basic_dense_torch/trained_networks/'
-    file = '784_30_10V2.pyt'
-    filename = prefix + file
-    net = Network([784, 30, 10])
-    training_data, validation_data, test_data = mnist_loader_torch.load_data_wrapper_torch(net.device)
-    ic(net.num_params)
-    
-    ### Training
+def training(net: Network, epochs: int, learning_rate: float, batch_size: int, training_data, test_data = None):
+    """
+    Method used to train and save a network.\n
+    If you for some reason want to abort the training process, you can press CTRL + C, and the network will be saved.
+    """
     try:
-        net.SGD(1000, 2.0, 100, training_data, test_data = test_data) # epochs, learning rate, batch size
+        net.SGD(epochs, learning_rate, batch_size, training_data, test_data = test_data) # epochs, learning rate, batch size
         print("\nSaving!")
         net.save(filename)
 
     except KeyboardInterrupt:
         print("\nSaving!")
         net.save(filename)
-    
-    train1 = training_data[0][0].unsqueeze(1) 
-    ic(net.feedforward(train1)) # The network should predict a 5. To get the prediction, take the index of the largest value in the output layer.
 
-    # Use cProfile to profile the SGD function for one epoch
-    # cProfile.run('net.SGD(training_data, 1, 3.0, test_data=test_data)')
+if __name__ == '__main__':
+
+    ### Filepath used for saving/loading of network.
+    prefix = 'Neural_Architectures/basic_dense_torch/trained_networks/'
+    file = '784_30_10.pyt'
+    file2 = '784_30_10V2.pyt'
+    filename = prefix + file
+    trained_file = prefix + file2
+
+    ### Create a custom network, important part is that input layer has 784 neurons and output layer has 10 neurons.
+    net = Network([784, 30, 10])
+    ic(net.num_params)
+
+    ### Load the MNIST dataset. If your network is using the GPU, then the data will be loaded into the GPU memory.
+    training_data, validation_data, test_data = mnist_loader_torch.load_data_wrapper_torch(net.device)
+
+    ### Train the network and save it.
+    # training(net, epochs = 30, learning_rate = 2, batch_size = 100, training_data = training_data, test_data = test_data)
+
+    ### Load some other trained network and do inference with it.  
+    net.load(trained_file)
+    train1 = training_data[0][0].unsqueeze(1)
+    ic(net.feedforward(train1)) # The network should predict a 5. To get the prediction, take the index of the largest value in the output layer.
+    
+    # visualize_sample(net, test_data)
+    visualize_samples(net, test_data, start_index = 6421, num_samples = 10)
+
+
+    ### Use cProfile to profile the SGD function for one epoch. This is done to see if there are any bottlenecks.
+    # cProfile.run('net.SGD(epochs = 1, alpha = 2, batch_size = 100, training_data = training_data, test_data = test_data)')
+
 
 """
 Insane optimization: Instead of calculating the gradient for each training example in the mini-batch separately,
