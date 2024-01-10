@@ -227,8 +227,10 @@ class QLearningAgent():
 
 if __name__ == '__main__':
 
+    prefix = "Connect_four2/"
     filename = "models/connect4_christian_bigboy.pk1" # Get the parameters you are working with.
-    
+    path = prefix + filename
+
     # Intialize the agent.
     agent = QLearningAgent(
         action_dim=7, 
@@ -242,7 +244,7 @@ if __name__ == '__main__':
     
     print(agent.device)
     try:
-        agent.load(filename) # Load the already trained agent
+        agent.load(path) # Load the already trained agent
         print("Agent loaded!")
     except:
         print("Model not found, training new agent!")
@@ -252,7 +254,7 @@ if __name__ == '__main__':
     try:
         agent.train(episodes=1_000_000_000) # 1 billion episodes, in practice this will run until you stop it with ctrl + c.
         print("\nSaving!")
-        agent.save(filename) # Save the agent after training. 
+        agent.save(path) # Save the agent after training. 
     except KeyboardInterrupt:
         print("\nSaving!")
-        agent.save(filename) # Save the agent if training is interrupted. 
+        agent.save(path) # Save the agent if training is interrupted. 

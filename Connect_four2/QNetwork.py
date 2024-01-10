@@ -4,6 +4,9 @@ class QNetwork(nn.Module):
     def __init__(self, object_dim, action_dim, hidden_dim):
         super(QNetwork, self).__init__()
         
+
+
+        ### input - hidden layer 1 - hidden layer 2 - hidden layer 3 - hidden layer 4 - hidden layer 5 - hidden layer 6 - output
         self.lin1 = nn.Linear(object_dim, hidden_dim)
         self.lin2 = nn.Linear(hidden_dim, hidden_dim)
         self.lin3 = nn.Linear(hidden_dim, hidden_dim)
