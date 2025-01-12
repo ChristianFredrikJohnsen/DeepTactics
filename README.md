@@ -1,6 +1,6 @@
 # DeepTactics by Cogito NTNU
 
-![Cogito Logo](/cogito_blue.png)
+![Demo](main.gif)
 
 Welcome to the Deeptactics Project! This repository is aimed at exploring reinforcement learning algorithms, both basic and advanced. Whether you're a beginner or have some experience, there's something here for you.
 
@@ -52,3 +52,5 @@ To install the required packages, run the following command:
 ```bash
 pip install -r requirements.txt
 ```
+
+![Cogito Logo](/cogito_blue.png)
