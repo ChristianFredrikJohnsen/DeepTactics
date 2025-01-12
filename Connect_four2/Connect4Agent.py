@@ -61,8 +61,8 @@ class QLearningAgent():
         """
         Loads the model parameters from a file.
         """
-        self.Q_network.load_state_dict(torch.load(filename, map_location=self.device))
-        self.opponent_Q_network.load_state_dict(torch.load(filename + "_opponent", map_location=self.device))
+        self.Q_network.load_state_dict(torch.load(filename, map_location=self.device, weights_only=False))
+        self.opponent_Q_network.load_state_dict(torch.load(filename + "_opponent", map_location=self.device, weights_only=False))
         self.target_network.load_state_dict(self.Q_network.state_dict())
         
     def copy_nn(self):

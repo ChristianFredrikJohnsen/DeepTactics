@@ -96,7 +96,7 @@ class ConnectFourPygame:
         """
         Loads the parameters of the trained neural network.
         """
-        self.opponent.load_state_dict(torch.load(path))
+        self.opponent.load_state_dict(torch.load(path, weights_only=False))
 
     def get_move(self, state):
         """
